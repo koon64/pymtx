@@ -1,7 +1,7 @@
 from lib.MatrixItem import MatrixItem
 from lib.MatrixPhone import MatrixPhone
 from lib.MatrixEmail import MatrixEmail
-from lib.MatrixName import MatrixName
+from lib.MatrixPersonName import MatrixPersonName
 from lib.MatrixAddress import MatrixAddress
 from lib.MatrixBirthdate import MatrixBirthdate
 from lib.MatrixSchoolYear import MatrixSchoolYear
@@ -21,7 +21,7 @@ class MatrixPerson(MatrixItem):
         super().__init__("person", item_tag, item_dict['meta']['groups'], matrix_instance)
         if self.type == "person":
             # sets the name object
-            self.name = MatrixName(item_dict['data']['name'])  # uses the MatrixName class
+            self.name = MatrixPersonName(item_dict['data']['name'])  # uses the MatrixName class
             # sets all the phone objs
             self.has_mobile = item_dict['data']['communication']['phone']['has_phone']
             # creates all the phone objects

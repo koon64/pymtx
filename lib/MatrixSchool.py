@@ -1,5 +1,6 @@
 from lib.MatrixItem import MatrixItem
 from lib.MatrixAddress import MatrixAddress
+from lib.MatrixName import MatrixName
 
 
 class MatrixSchool(MatrixItem):

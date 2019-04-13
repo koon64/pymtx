@@ -59,9 +59,12 @@ class Matrix:
     def load_from_url(self, url, refresh_cache=False):
         pass
 
+    # searches for an item from its username (very basic, will update later with a query system)
     def search(self, query):
-        return [item for item in self.items if item.type == "person" and item.name.username.lower().replace(".", " ").startswith(query.lower())]
+        return [item for item in self.items
+                if item.type == "person" and item.name.username.lower().replace(".", " ").startswith(query.lower())]
 
+    # adds groups to an item and creates the group objs
     def add_groups(self, groups_array, item):
         added_groups = []
         for group in groups_array:
@@ -73,6 +76,7 @@ class Matrix:
             added_groups.append(group_match)
         return added_groups
 
+    # gets a group obj from its name
     def get_group(self, group_name):
         for group in self.groups:
             if group.name == group_name:
