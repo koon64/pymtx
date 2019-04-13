@@ -1,5 +1,7 @@
 from unders import Underscore
-from lib.MatrixItem import MatrixItem
+from lib.MatrixGroup import MatrixGroup
+from lib.MatrixPerson import MatrixPerson
+from lib.MatrixSchool import MatrixSchool
 
 # Creates the underscore variable
 # if you dont know what this is, go to: https://github.com/koon64/underscore
@@ -19,6 +21,7 @@ class Matrix:
         self.db_created = None
         self.db_updated = None
         self.items = []
+        self.groups = []
 
     # loads a database from a file
     def load_from_file(self, path):
@@ -34,7 +37,19 @@ class Matrix:
                 # sets the created and updated vars
                 self.db_created = _.time.parse_date(self.object_from_json['info']['created'])  # converts to date objs
                 self.db_updated = _.time.parse_date(self.object_from_json['info']['updated'])  # converts to date objs
-                self.items = [MatrixItem(item, self.object_from_json['items'][item], self) for item in self.object_from_json['items']]
+                self.items = []
+                for tag in self.object_from_json['items']:
+                    item = self.object_from_json['items'][tag]
+                    item_type = item['type']
+                    matrix_item = None
+                    if item_type == "person":
+                        matrix_item = MatrixPerson(tag, item, self)
+                    elif item_type == "school":
+                        matrix_item = MatrixSchool(tag, item, self)
+                    if matrix_item is not None:
+                        self.items.append(matrix_item)
+                    else:
+                        raise Exception('"' + item_type + '" is an invalid item type')
             else:
                 raise Exception("database version is outdated")
         else:
@@ -47,5 +62,19 @@ class Matrix:
     def search(self, query):
         return [item for item in self.items if item.type == "person" and item.name.username.lower().replace(".", " ").startswith(query.lower())]
 
-    def add_groups(self, groups_array):
-        pass
+    def add_groups(self, groups_array, item):
+        added_groups = []
+        for group in groups_array:
+            group_match = self.get_group(group)
+            if group_match is None:
+                group_match = MatrixGroup(group)
+                self.groups.append(group_match)
+            group_match.add_item(item)
+            added_groups.append(group_match)
+        return added_groups
+
+    def get_group(self, group_name):
+        for group in self.groups:
+            if group.name == group_name:
+                return group
+        return None
