@@ -3,8 +3,7 @@ from lib.MatrixName import MatrixName
 
 class MatrixPersonName(MatrixName):
     def __init__(self, name_dict):
-        # inits the parent class
-        super().__init__(self.full)
+
         # all the basic names
         self.given = name_dict['given']
         self.middle = name_dict['middle']
@@ -15,6 +14,9 @@ class MatrixPersonName(MatrixName):
         self.nicknames = name_dict['nicknames']
         self.initials = name_dict['initials']
         self.username = name_dict['username']
+
+        # inits the parent class
+        super().__init__(self.full)
 
     def __str__(self):
         return self.full_formatted

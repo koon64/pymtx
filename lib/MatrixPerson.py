@@ -43,11 +43,7 @@ class MatrixPerson(MatrixItem):
             # sets the address
             address = item_dict['data']['address']['addresses']
             if address:
-                self.address = MatrixAddress(address['type'], address['lat'], address['lng'], address['country'],
-                                             address['cid'], address['state'], address['sid'], address['county'],
-                                             address['town'], address['zip'], address['street_format'],
-                                             address['street_name'], address['street_suffix'], address['number'],
-                                             address['full_address'])
+                self.address = MatrixAddress(address['type'], address['lat'], address['lng'], address['full_address'])
             # sets the birthday
             self.has_birthdate = item_dict['data']['birthdate']['date'] is not None
             if self.has_birthdate:
@@ -89,18 +85,22 @@ class MatrixPerson(MatrixItem):
                                                 for rotation in semester["schedule"]:
                                                     rotation_obj = MatrixSchoolRotation(r_num)
                                                     rotation_period = 0
-                                                    for class_dict in rotation:
-                                                        period = self.period_match("{}{}".format(r_num,
-                                                                                                 rotation_period))
-                                                        if class_dict["name"] != "free":
-                                                            rotation_obj.add_class(MatrixSchoolClass(
-                                                                class_dict["name"],
-                                                                class_dict["teachers"],
-                                                                class_dict["room"],
-                                                                period))
-                                                        else:
-                                                            rotation_obj.add_class(MatrixSchoolFree())
-                                                        rotation_period += 1
+                                                    if len(rotation) <= 7:
+                                                        for class_dict in rotation:
+                                                            period = self.period_match("{}{}".format(r_num,
+                                                                                                     rotation_period))
+                                                            if class_dict["name"] != "free":
+                                                                rotation_obj.add_class(MatrixSchoolClass(
+                                                                    class_dict["name"],
+                                                                    class_dict["teachers"],
+                                                                    class_dict["room"],
+                                                                    period))
+                                                            else:
+                                                                rotation_obj.add_class(MatrixSchoolFree())
+                                                            rotation_period += 1
+                                                    else:
+                                                        if matrix_instance.debug:
+                                                            print(str(self.name) + "has an invalid schedule")
                                                     schedule_obj.add_rotation(rotation_obj)
                                                     r_num += 1
                                                 year_obj.semesters[s_num].set_schedule(schedule_obj)
@@ -181,4 +181,13 @@ class MatrixPerson(MatrixItem):
     @property
     def age(self):
         if self.has_birthdate:
-            return _.get_age(self.birthdate.date_string)
+            try:
+                return _.get_age(self.birthdate.date_string)
+            except:
+                return None
+
+    @property
+    def age_seconds(self):
+        if self.has_birthdate:
+            return self.birthdate.timestamp
+
