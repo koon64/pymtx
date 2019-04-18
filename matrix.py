@@ -28,6 +28,162 @@ class Matrix:
         # for querying
         self.attribute_tester = MatrixAttributeTester(self)
 
+        self.attribute_tree = {
+            "age": {
+                "function": self.attribute_tester.age_value,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "gtr",
+                    "less",
+                    "gtr_equ",
+                    "less_equ"
+                ],
+                "type": "int",
+                "parent": True,
+                "sub_attributes": {
+                    "seconds": {
+                        "type": "int",
+                        "function": self.attribute_tester.age_seconds_value,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "gtr",
+                            "less",
+                            "gtr_equ",
+                            "less_equ"
+                        ]
+                    }
+                }
+            },
+            "birthdate": {
+                "type": "string",
+                "parent": True,
+                "function": self.attribute_tester.birthdate_val,
+                "valid_ops": [
+                    "equals",
+                    "not_equals"
+                ],
+                "sub_attributes": {
+                    "dow": {
+                        "type": "string",
+                        "function": self.attribute_tester.birthdate_val_dow,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals"
+                        ]
+                    },
+                    "day": {
+                        "type": "int",
+                        "function": self.attribute_tester.birthdate_val_day,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "gtr",
+                            "less",
+                            "gtr_equ",
+                            "less_equ"
+                        ]
+                    },
+                    "month": {
+                        "type": "int",
+                        "function": self.attribute_tester.birthdate_val_month,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "gtr",
+                            "less",
+                            "gtr_equ",
+                            "less_equ"
+                        ]
+                    },
+                    "year": {
+                        "type": "int",
+                        "function": self.attribute_tester.birthdate_val_year,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "gtr",
+                            "less",
+                            "gtr_equ",
+                            "less_equ"
+                        ]
+                    }
+                }
+            },
+            "name": {
+                "type": "string",
+                "parent": True,
+                "function": self.attribute_tester.name_value,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "starts_with",
+                    "ends_with"
+                ],
+                "sub_attributes": {
+                    "given": {
+                        "type": "string",
+                        "function": self.attribute_tester.name_value_given,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "middle": {
+                        "type": "string",
+                        "function": self.attribute_tester.name_value_middle,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "surname": {
+                        "type": "string",
+                        "function": self.attribute_tester.name_value_surname,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    }
+                }
+            },
+            "type": {
+                "type": "string",
+                "function": self.attribute_tester.type_value,
+                "valid_ops": [
+                    "equals",
+                    "not_equals"
+                ],
+                "sub_attributes": {
+                    "type": {  # this is thing type
+                        "type": "string",
+                        "function": self.attribute_tester.thing_type,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals"
+                        ]
+                    }
+                }
+            },
+            "tag": {
+                "type": "string",
+                "function": self.attribute_tester.item_tag,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "starts_with",
+                    "ends_with"
+                ]
+            }
+        }
+
     # loads a database from a file
     def load_from_file(self, path):
         # makes sure the file exists
@@ -109,23 +265,16 @@ class Matrix:
         return items
 
     def parse_query_string(self, query_string):
-        return query_string
-        attribute_tree = {
-            "age": {
-                "type": "int",
-                "sub_attributes": {
-                    "seconds": {
-                        "type": "int"
-                    }
-                }
-            }
-        }
+        # return query_string
         limit = query_string.split(' limit ')
         query = limit[0]
         order = query.split(' order ')
         query = order[0]
         words = query.split()
-        query_array = {}
+        query_array = {
+            "command": "",
+            "conditions": []
+        }
         after_command = query.split(words[0])[1]
         words[0] = words[0].lower()
         if words[0] == "select":
@@ -148,6 +297,7 @@ class Matrix:
                 'negative': [],
             }
         }
+        groups = ''
 
         if query_array['command'] == 'select':
             selector = after_command.split("from")[0].strip()
@@ -166,8 +316,8 @@ class Matrix:
                         selector_array['negative'].append(select_part.replace("-", ""))
             groups = query.split("from")[1]
             groups = groups.split("where")[0].strip()
-        elif query_array['command'] == 'update':
-            pass
+        # elif query_array['command'] == 'update':
+        #     pass
             # groups = after_command.split('set')
             # if len(groups) != 1:
             #     groups = groups[0].strip()
@@ -175,180 +325,190 @@ class Matrix:
             #     if len(set_string) > 1:
             #         pass
 
-
+        if groups == "*":
+            selector_array['type']['all'] = True
+        else:
+            select_parts = groups.split(",")
+            for select_part in select_parts:
+                if select_part[0] != "-":
+                    if select_part != "*":
+                        selector_array['type']['positive'].append(select_part)
+                    else:
+                        selector_array['type']['all'] = True
+                        selector_array['type']['all_with_exeptions'] = True
+                else:
+                    selector_array['type']['negative'].append(select_part.replace('-', ''))
+        conditions = query.split('where')
+        conditions_array = []
+        if len(conditions) != 1:
+            conditions = conditions[1].strip().split('and')
+            i = 0
+            for condition in conditions:
+                condition_equals = condition.split('==')
+                condition_not_equals = condition.split('!=')
+                condition_starts_with = condition.split(':=')
+                condition_ends_with = condition.split('=:')
+                condition_in = condition.split('<-')
+                condition_gtreq = condition.split('>=')
+                condition_lesseq = condition.split('<=')
+                condition_gtr = condition.split('>')
+                condition_less = condition.split('<')
+                if len(condition_equals) != 1:
+                    conditions_array.append({
+                        "attribute": condition_equals[0].strip(),
+                        "operator": 'equals',
+                        "value": condition_equals[1].strip()
+                    })
+                elif len(condition_not_equals) != 1:
+                    conditions_array.append({
+                        "attribute": condition_not_equals[0].strip(),
+                        "operator": 'not_equals',
+                        "value": condition_not_equals[1].strip()
+                    })
+                elif len(condition_starts_with) != 1:
+                    conditions_array.append({
+                        "attribute": condition_starts_with[0].strip(),
+                        "operator": 'starts_with',
+                        "value": condition_starts_with[1].strip()
+                    })
+                elif len(condition_ends_with) != 1:
+                    conditions_array.append({
+                        "attribute": condition_ends_with[0].strip(),
+                        "operator": 'ends_with',
+                        "value": condition_ends_with[1].strip()
+                    })
+                elif len(condition_gtreq) != 1:
+                    condition_gtr = []
+                    conditions_array.append({
+                        "attribute": condition_gtreq[0].strip(),
+                        "operator": 'gtr_equ',
+                        "value": condition_gtreq[1].strip()
+                    })
+                elif len(condition_in) != 1:
+                    condition_less = []
+                    conditions_array.append({
+                        "attribute": condition_in[0].strip(),
+                        "operator": 'in_array',
+                        "value": condition_in[1].strip()
+                    })
+                elif len(condition_lesseq) != 1:
+                    condition_less = []
+                    conditions_array.append({
+                        "attribute": condition_lesseq[0].strip(),
+                        "operator": 'less_equ',
+                        "value": condition_lesseq[1].strip()
+                    })
+                elif len(condition_gtr) != 1:
+                    conditions_array.append({
+                        "attribute": condition_gtr[0].strip(),
+                        "operator": 'gtr',
+                        "value": condition_gtr[1].strip()
+                    })
+                elif len(condition_less) != 1:
+                    conditions_array.append({
+                        "attribute": condition_less[0].strip(),
+                        "operator": 'less',
+                        "value": condition_less[1].strip()
+                    })
+                else:
+                    if condition[0] != '!':
+                        conditions_array.append({
+                            "attribute": condition_equals[0].strip(),
+                            "operator": 'equals',
+                            "value": 'true'
+                        })
+                    else:
+                        conditions_array.append({
+                            "attribute": condition_equals[0].strip(),
+                            "operator": 'equals',
+                            "value": 'false'
+                        })
+                recent_condition = conditions_array[i]
+                recent_condition['case_sensitive'] = recent_condition['attribute'][-1] != '*'
+                recent_condition['attribute'] = recent_condition['attribute'][:-1] \
+                    if not recent_condition['case_sensitive'] else recent_condition['attribute']
+                conditions_array[i] = recent_condition
+                i += 1
+        else:
+            pass
+        query_array['conditions'] = conditions_array
         return query_array
 
     def select_items_from_query_array(self, query_array):
-        selectors = query_array['selectors']
-        return [item for item in self.items if self.valid_item_from_selectors(item, selectors)]
+        conditions = query_array['conditions']
+        return [item for item in self.items if self.valid_item_from_conditions(item, conditions)]
 
-    def valid_item_from_selectors(self, item, selectors):
+    def valid_item_from_conditions(self, item, conditions):
         valid_item = True
-        for selector in selectors:
-            test_result = self.valid_item_from_selector(item, selector)
+        for condition in conditions:
+            test_result = self.valid_item_from_condition(item, condition)
             if not test_result:
                 valid_item = False
         return valid_item
 
-    def valid_item_from_selector(self, item, selector):
-        attributes = {
-            "groups": {
-                "function": self.attribute_tester.item_in_group,
-                "valid_ops": [
-                    "in",
-                    "not_in"
-                ]
-            },
-            "age": {
-                "function": self.attribute_tester.age_value,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "gtr",
-                    "less",
-                    "gtr_equ",
-                    "less_equ"
-                ]
-            },
-            "age_seconds": {
-                "function": self.attribute_tester.age_seconds_value,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "gtr",
-                    "less",
-                    "gtr_equ",
-                    "less_equ"
-                ]
-            },
-            "type": {
-                "function": self.attribute_tester.type_value,
-                "valid_ops": [
-                    "equals",
-                    "not_equals"
-                ]
-            },
-            "thing_type": {
-                "function": self.attribute_tester.thing_type,
-                "valid_ops": [
-                    "equals",
-                    "not_equals"
-                ]
-            },
-            "birthdate": {
-                "function": self.attribute_tester.birthdate_val,
-                "valid_ops": [
-                    "equals",
-                    "not_equals"
-                ]
-            },
-            "birthdate_year": {
-                "function": self.attribute_tester.birthdate_val_year,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "gtr",
-                    "less",
-                    "gtr_equ",
-                    "less_equ"
-                ]
-            },
-            "birthdate_month": {
-                "function": self.attribute_tester.birthdate_val_month,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "gtr",
-                    "less",
-                    "gtr_equ",
-                    "less_equ"
-                ]
-            },
-            "birthdate_day": {
-                "function": self.attribute_tester.birthdate_val_day,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "gtr",
-                    "less",
-                    "gtr_equ",
-                    "less_equ"
-                ]
-            },
-            "birthdate_dow": {
-                "function": self.attribute_tester.birthdate_val_dow,
-                "valid_ops": [
-                    "equals"
-                    "not_equals"
-                ]
-            },
-            "name": {
-                "function": self.attribute_tester.name_value,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "starts_with",
-                    "ends_with"
-                ]
-            },
-            "name_given": {
-                "function": self.attribute_tester.name_value_given,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "starts_with",
-                    "ends_with"
-                ]
-            },
-            "name_middle": {
-                "function": self.attribute_tester.name_value_middle,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "starts_with",
-                    "ends_with"
-                ]
-            },
-            "name_surname": {
-                "function": self.attribute_tester.name_value_surname,
-                "valid_ops": [
-                    "equals",
-                    "not_equals",
-                    "starts_with",
-                    "ends_with"
-                ]
-            }
-        }
-        if selector['attribute'] in attributes:
-            attribute = attributes[selector['attribute']]
-            if selector['operator'] in attribute['valid_ops']:
-                case_sensitive = "case_sensitive" not in selector or selector['case_sensitive']
-                if not case_sensitive:
-                    selector['value'] = selector['value'].lower()
-                operator = selector['operator']
-                if operator == "in":
-                    return attribute['function'](item, selector['value'])
-                elif operator == "not_in":
-                    return not attribute['function'](item, selector['value'])
-                elif operator == "equals":
-                    return attribute['function'](item) is not None and self.lower_if_true(attribute['function'](item), case_sensitive) == selector['value']
-                elif operator == "not_equals":
-                    return self.lower_if_true(attribute['function'](item), case_sensitive) != selector['value']
-                elif operator == "gtr":
-                    return attribute['function'](item) is not None and attribute['function'](item) > selector['value']
-                elif operator == "less":
-                    return attribute['function'](item) is not None and attribute['function'](item) < selector['value']
-                elif operator == "gtr_equ":
-                    return attribute['function'](item) is not None and attribute['function'](item) >= selector['value']
-                elif operator == "less_equ":
-                    return attribute['function'](item) is not None and attribute['function'](item) <= selector['value']
-                elif operator == "starts_with":
-                    return attribute['function'](item) is not None and self.lower_if_true(str(attribute['function'](item)), case_sensitive).startswith(selector['value'])
-                elif operator == "ends_with":
-                    return attribute['function'](item) is not None and self.lower_if_true(str(attribute['function'](item)), case_sensitive).endswith(selector['value'])
-            raise Exception(selector['operator'] + " is an invalid operator")
-        raise Exception(selector['attribute'] + " is an invalid attribute")
+    # tests if a value can be a type of var
+    def valid_value_from_type(self, value, test_type):
+        if test_type == "int":
+            try:
+                int(value)
+                return True
+            except:
+                return False
+        elif test_type == "string":
+            return True
+        else:
+            raise Exception(test_type + " is an invalid type")
 
-    def lower_if_true(self, text, lower):
-        return text.lower() if lower else text
+    def valid_item_from_condition(self, item, condition):
+        value = condition['attribute']
+        value_parts = value.split('.')
+        current_tree = self.attribute_tree
+        part_count = 0
+        for value_part in value_parts:
+            if value_part in current_tree:
+                if "parent" in current_tree[value_part] and len(value_parts) > part_count + 1:
+                    current_tree = current_tree[value_part]['sub_attributes']
+                else:
+                    attribute = current_tree[value_part]
+                    if condition['operator'] in attribute['valid_ops']:
+                        if self.valid_value_from_type(condition['value'], attribute['type']):
+                            case_sensitive = "case_sensitive" not in condition or condition['case_sensitive']
+                            if not case_sensitive:
+                                condition['value'] = condition['value'].lower()
+                            operator = condition['operator']
+                            if operator == "in":
+                                return attribute['function'](item, condition['value'])
+                            elif operator == "not_in":
+                                return not attribute['function'](item, condition['value'])
+                            elif operator == "equals":
+                                return attribute['function'](item) is not None and self.lower_if_false(
+                                    attribute['function'](item), case_sensitive) == condition['value']
+                            elif operator == "not_equals":
+                                return self.lower_if_false(attribute['function'](item), case_sensitive) != condition['value']
+                            elif operator == "gtr":
+                                return attribute['function'](item) is not None and attribute['function'](item) > \
+                                       int(condition['value'])
+                            elif operator == "less":
+                                return attribute['function'](item) is not None and attribute['function'](item) < \
+                                       int(condition['value'])
+                            elif operator == "gtr_equ":
+                                return attribute['function'](item) is not None and attribute['function'](item) >= \
+                                       int(condition['value'])
+                            elif operator == "less_equ":
+                                return attribute['function'](item) is not None and attribute['function'](item) <= \
+                                       int(condition['value'])
+                            elif operator == "starts_with":
+                                return attribute['function'](item) is not None and self.lower_if_false(
+                                    str(attribute['function'](item)), case_sensitive).startswith(condition['value'])
+                            elif operator == "ends_with":
+                                return attribute['function'](item) is not None and self.lower_if_false(
+                                    str(attribute['function'](item)), case_sensitive).endswith(condition['value'])
+                        raise Exception("INVALID DATATYPE " + condition['value'] + " can not be a " + attribute['type'])
+                    raise Exception(condition['operator'] + " is an invalid operator for " + condition['attribute'])
+            else:
+                raise Exception(value_part + ' is an invalid attribute')
+            part_count += 1
 
+    def lower_if_false(self, text, lower):
+        text = str(text)
+        return text.lower() if not lower else text

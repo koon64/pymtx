@@ -1,27 +1,12 @@
 from matrix import Matrix
 
 mtx = Matrix()
+
 mtx.load_from_file("matrix_v2.json")
 
-query_string = "SELECT * FROM people WHERE birthdate.dow"
-
-query = {
-    "command": "select",
-    "selectors": [
-        {
-            "attribute": "birthdate_dow",
-            "operator": "equals",
-            "value": "mon"
-        }
-    ]
-}
-
-r = mtx.query(query_string)
+r = mtx.query("select * from people where name* == max")
 for i in r:
     print(i)
-
-i = mtx.items[0]
-
 
 # me = mtx.search("max a")[0]
 # y = me.school_years[0]

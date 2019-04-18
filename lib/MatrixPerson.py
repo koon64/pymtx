@@ -191,3 +191,12 @@ class MatrixPerson(MatrixItem):
         if self.has_birthdate:
             return self.birthdate.timestamp
 
+    @property
+    def zodiac(self):
+        if self.has_birthdate:
+            return self.birthdate.zodiac
+
+    @property
+    def zodiac_emoji(self):
+        if self.has_birthdate:
+            return self.birthdate.zodiac_emoji
