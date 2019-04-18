@@ -27,7 +27,6 @@ class Matrix:
 
         # for querying
         self.attribute_tester = MatrixAttributeTester(self)
-
         self.attribute_tree = {
             "age": {
                 "function": self.attribute_tester.age_value,
@@ -180,6 +179,111 @@ class Matrix:
                     "not_equals",
                     "starts_with",
                     "ends_with"
+                ]
+            },
+            "address": {
+                "type": "string",
+                "parent": True,
+                "function": self.attribute_tester.address_string,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "starts_with",
+                    "ends_with"
+                ],
+                "sub_attributes": {
+                    "country": {
+                        "type": "string",
+                        "function": self.attribute_tester.address_country,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "cid": {
+                        "type": "string",
+                        "function": self.attribute_tester.address_country_id,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "function": self.attribute_tester.address_state,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "sid": {
+                        "type": "string",
+                        "function": self.attribute_tester.address_state_id,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "locality": {
+                        "type": "string",
+                        "function": self.attribute_tester.address_locality,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "street": {
+                        "type": "string",
+                        "function": self.attribute_tester.address_street,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "number": {
+                        "type": "int",
+                        "function": self.attribute_tester.address_number,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "format": {
+                        "type": "container",
+                        "parent": True,
+                        "sub_attributes": {
+                            "street": {
+                                "type": "string",
+                                "function": self.attribute_tester.address_street_format
+                            }
+                        }
+                    }
+                }
+            },
+            "grade": {
+                "type": "int",
+                "function": self.attribute_tester.grade_value,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "gtr",
+                    "less",
+                    "gtr_equ",
+                    "less_equ"
                 ]
             }
         }
@@ -512,3 +616,4 @@ class Matrix:
     def lower_if_false(self, text, lower):
         text = str(text)
         return text.lower() if not lower else text
+

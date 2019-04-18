@@ -1,3 +1,4 @@
+import logging
 from lib.MatrixItem import MatrixItem
 from lib.MatrixPhone import MatrixPhone
 from lib.MatrixEmail import MatrixEmail
@@ -42,8 +43,10 @@ class MatrixPerson(MatrixItem):
             self.email = [email for email in self.emails if email.type == "personal"][0] if self.has_email else None
             # sets the address
             address = item_dict['data']['address']['addresses']
+            self.has_address = address
             if address:
-                self.address = MatrixAddress(address['type'], address['lat'], address['lng'], address['full_address'])
+                self.address = MatrixAddress(address['type'], address['lat'], address['lng'], address['full_address'],
+                                             self.matrix_instance.debug)
             # sets the birthday
             self.has_birthdate = item_dict['data']['birthdate']['date'] is not None
             if self.has_birthdate:
@@ -58,54 +61,59 @@ class MatrixPerson(MatrixItem):
             self.sex = item_dict['data']['sex']
             # education
             self.school_years = []
+            self.student = False
             if item_dict['data']['education'] and "yog" in item_dict['data']['education']:
-                self.yog = item_dict['data']['education']['yog']
-                for school_type in item_dict['data']['education']:
-                    if school_type != "yog":
-                        school = item_dict['data']['education'][school_type]
-                        if "yog" in school:
-                            if "years" in school:
-                                for year in school['years']:
-                                    year_dict = school['years'][year]
-                                    year_obj = MatrixSchoolYear(year)
-                                    if "quarters" in year_dict:
-                                        q_num = 0
-                                        for quarter_dict in year_dict["quarters"]:
-                                            if type(quarter_dict) is dict:
-                                                if quarter_dict["honors_role"]:
-                                                    year_obj.quarters[q_num].set_honors(True,
-                                                                                        quarter_dict["high_honors"])
-                                            q_num += 1
-                                    if "semesters" in year_dict:
-                                        s_num = 0
-                                        for semester in year_dict["semesters"]:
-                                            if "schedule" in semester:
-                                                schedule_obj = MatrixSchoolSchedule()
-                                                r_num = 0
-                                                for rotation in semester["schedule"]:
-                                                    rotation_obj = MatrixSchoolRotation(r_num)
-                                                    rotation_period = 0
-                                                    if len(rotation) <= 7:
-                                                        for class_dict in rotation:
-                                                            period = self.period_match("{}{}".format(r_num,
-                                                                                                     rotation_period))
-                                                            if class_dict["name"] != "free":
-                                                                rotation_obj.add_class(MatrixSchoolClass(
-                                                                    class_dict["name"],
-                                                                    class_dict["teachers"],
-                                                                    class_dict["room"],
-                                                                    period))
-                                                            else:
-                                                                rotation_obj.add_class(MatrixSchoolFree())
-                                                            rotation_period += 1
-                                                    else:
-                                                        if matrix_instance.debug:
-                                                            print(str(self.name) + "has an invalid schedule")
-                                                    schedule_obj.add_rotation(rotation_obj)
-                                                    r_num += 1
-                                                year_obj.semesters[s_num].set_schedule(schedule_obj)
-                                            s_num += 1
-                                    self.school_years.append(year_obj)
+                if item_dict['data']['education']['yog'] != "":
+                    self.yog = int(item_dict['data']['education']['yog'])
+                    self.student = True
+                    for school_type in item_dict['data']['education']:
+                        if school_type != "yog":
+                            school = item_dict['data']['education'][school_type]
+                            if "yog" in school:
+                                if "years" in school:
+                                    for year in school['years']:
+                                        year_dict = school['years'][year]
+                                        year_obj = MatrixSchoolYear(year)
+                                        if "quarters" in year_dict:
+                                            q_num = 0
+                                            for quarter_dict in year_dict["quarters"]:
+                                                if type(quarter_dict) is dict:
+                                                    if quarter_dict["honors_role"]:
+                                                        year_obj.quarters[q_num].set_honors(True,
+                                                                                            quarter_dict["high_honors"])
+                                                q_num += 1
+                                        if "semesters" in year_dict:
+                                            s_num = 0
+                                            for semester in year_dict["semesters"]:
+                                                if "schedule" in semester:
+                                                    schedule_obj = MatrixSchoolSchedule()
+                                                    r_num = 0
+                                                    for rotation in semester["schedule"]:
+                                                        rotation_obj = MatrixSchoolRotation(r_num)
+                                                        rotation_period = 0
+                                                        if len(rotation) <= 7:
+                                                            for class_dict in rotation:
+                                                                period = self.period_match("{}{}".format(r_num,
+                                                                                                         rotation_period))
+                                                                if class_dict["name"] != "free":
+                                                                    rotation_obj.add_class(MatrixSchoolClass(
+                                                                        class_dict["name"],
+                                                                        class_dict["teachers"],
+                                                                        class_dict["room"],
+                                                                        period))
+                                                                else:
+                                                                    rotation_obj.add_class(MatrixSchoolFree())
+                                                                rotation_period += 1
+                                                        else:
+                                                            if matrix_instance.debug:
+                                                                logging.error("Parsing " + _.format.possession(str(self.name)) + " schedule")
+                                                        schedule_obj.add_rotation(rotation_obj)
+                                                        r_num += 1
+                                                    year_obj.semesters[s_num].set_schedule(schedule_obj)
+                                                s_num += 1
+                                        self.school_years.append(year_obj)
+                else:
+                    print(item_dict['data']['education']['yog'])
 
     def __str__(self):
         return "[ MTX PERSON <"+self.tag+"> " + str(self.name) + " ]"
@@ -200,3 +208,12 @@ class MatrixPerson(MatrixItem):
     def zodiac_emoji(self):
         if self.has_birthdate:
             return self.birthdate.zodiac_emoji
+
+    # gets the current grade
+    @property
+    def grade(self):
+        if self.student:
+            return _.get_grade(self.yog)
+        if self.matrix_instance.debug:
+            logging.warning(str(self) + " is not a student, therefore can not get the grade")
+

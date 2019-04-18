@@ -63,3 +63,53 @@ class MatrixAttributeTester:
     def item_tag(self, item):
         return item.tag
 
+    # returns the full address string
+    def address_string(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return str(item.address)
+
+    # returns the address country
+    def address_country(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.country
+
+    # returns the address country_id
+    def address_country_id(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.cid
+
+    # returns the address state
+    def address_state(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.state
+
+    # returns the address state_id
+    def address_state_id(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.sid
+
+    # returns the address locality
+    def address_locality(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.locality
+
+    # returns the address street
+    def address_street(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.street_name
+
+    # returns the address number
+    def address_number(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.number
+
+    # returns the address street_format
+    def address_street_format(self, item):
+        if type(item) is MatrixPerson and item.has_address:
+            return item.address.street_format
+
+    # returns a student's grade level
+    def grade_value(self, item):
+        if type(item) is MatrixPerson and item.student:
+            return item.grade
+
