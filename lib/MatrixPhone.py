@@ -14,6 +14,9 @@ class MatrixPhone:
     def __str__(self):
         return self.formatted
 
+    def __int__(self):
+        return int(self.number)
+
     # formats a the phone number
     @property
     def formatted(self):

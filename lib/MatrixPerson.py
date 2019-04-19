@@ -119,10 +119,14 @@ class MatrixPerson(MatrixItem):
         return "[ MTX PERSON <"+self.tag+"> " + str(self.name) + " ]"
 
     def get_phone(self, phone_type):
-        return next(phone for phone in self.phones if phone.type == phone_type)
+        for phone in self.phones:
+            if phone.type == phone_type:
+                return phone
 
     def get_email(self, email_type):
-        return next(email for email in self.emails if email.type == email_type)
+        for email in self.emails:
+            if email.type == email_type:
+                return email
 
     def period_match(self, rotation_period):
         period_match = {

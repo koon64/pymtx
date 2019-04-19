@@ -113,3 +113,53 @@ class MatrixAttributeTester:
         if type(item) is MatrixPerson and item.student:
             return item.grade
 
+    # returns a student's yog
+    def yog(self, item):
+        if type(item) is MatrixPerson and item.student:
+            return item.yog
+
+    # returns the zodiac sign string
+    def zodiac(self, item):
+        if type(item) is MatrixPerson and item.has_birthdate:
+            return item.zodiac
+
+    # returns a person's sex
+    def get_sex(self, item):
+        if type(item) is MatrixPerson:
+            return item.sex
+
+    # returns a main phone number
+    def main_phone(self, item):
+        if type(item) is MatrixPerson and item.has_mobile:
+            return str(item.mobile.number)
+
+    # returns a phone number from its type
+    def phone_number(self, item, phone_type):
+        if type(item) is MatrixPerson:
+            phone = item.get_phone(phone_type)
+            if phone is not None:
+                return str(phone.number)
+
+    # returns all phone numbers in an array
+    def get_phones(self, item):
+        if type(item) is MatrixPerson:
+            return [str(phone.number) for phone in item.phones]
+
+    # returns the main email
+    def main_email(self, item):
+        if type(item) is MatrixPerson and item.has_email:
+            return item.email
+
+    # returns an email address from its type
+    def email_address(self, item, email_type):
+        if type(item) is MatrixPerson:
+            email = item.get_email(email_type)
+            if email is not None:
+                return email.email
+
+    # returns all emails
+    def get_emails(self, item):
+        if type(item) is MatrixPerson:
+            return [email.email for email in item.emails]
+
+

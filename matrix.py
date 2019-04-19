@@ -1,5 +1,6 @@
 from unders import Underscore
 from lib.MatrixAttributeTester import MatrixAttributeTester
+from lib.MatrixAttributeModifier import MatrixAttributeModifier
 from lib.MatrixGroup import MatrixGroup
 from lib.MatrixPerson import MatrixPerson
 from lib.MatrixSchool import MatrixSchool
@@ -285,6 +286,97 @@ class Matrix:
                     "gtr_equ",
                     "less_equ"
                 ]
+            },
+            "yog": {
+                "type": "int",
+                "function": self.attribute_tester.yog,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "gtr",
+                    "less",
+                    "gtr_equ",
+                    "less_equ"
+                ]
+            },
+            "zodiac": {
+                "type": "string",
+                "function": self.attribute_tester.zodiac,
+                "valid_ops": [
+                    "equals",
+                    "not_equals"
+                ]
+            },
+            "sex": {
+                "type": "string",
+                "function": self.attribute_tester.get_sex,
+                "valid_ops": [
+                    "equals",
+                    "not_equals"
+                ]
+            },
+            "phone": {
+                "type": "string",
+                "function": self.attribute_tester.main_phone,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "starts_with",
+                    "ends_with"
+                ],
+                "sub_main_function": self.attribute_tester.phone_number
+            },
+            "phones": {
+                "type": "array",
+                "function": self.attribute_tester.get_phones,
+                "valid_ops": [
+                    "in",
+                    "not_in"
+                ]
+            },
+            "email": {
+                "type": "string",
+                "function": self.attribute_tester.main_email,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "starts_with",
+                    "ends_with"
+                ],
+                "sub_main_function": self.attribute_tester.email_address
+            },
+            "emails": {
+                "type": "array",
+                "function": self.attribute_tester.get_emails,
+                "valid_ops": [
+                    "in",
+                    "not_in"
+                ]
+            }
+        }
+        self.attribute_modifier = MatrixAttributeModifier()
+        self.attribute_modifiers = {
+            "words": {
+                "valid_types": [
+                    "string"
+                ],
+                "change_to_type": "array",
+                "valid_ops": [
+                    "in",
+                    "not_in"
+                ],
+                "function": self.attribute_modifier.words
+            },
+            "lower": {
+                "valid_types": [
+                    "string"
+                ],
+                "change_to_type": "string",
+                "valid_ops": [
+                    "equals",
+                    "not_equals"
+                ],
+                "function": self.attribute_modifier.lower
             }
         }
 
@@ -368,6 +460,7 @@ class Matrix:
         items = self.select_items_from_query_array(query_array)
         return items
 
+    # converts a sql like string to a query_array
     def parse_query_string(self, query_string):
         # return query_string
         limit = query_string.split(' limit ')
@@ -420,14 +513,15 @@ class Matrix:
                         selector_array['negative'].append(select_part.replace("-", ""))
             groups = query.split("from")[1]
             groups = groups.split("where")[0].strip()
-        # elif query_array['command'] == 'update':
-        #     pass
-            # groups = after_command.split('set')
-            # if len(groups) != 1:
-            #     groups = groups[0].strip()
-            #     set_string = query.split('set')
-            #     if len(set_string) > 1:
-            #         pass
+        elif query_array['command'] == 'update':
+            # TODO: make the other commands
+            pass
+            groups = after_command.split('set')
+            if len(groups) != 1:
+                groups = groups[0].strip()
+                set_string = query.split('set')
+                if len(set_string) > 1:
+                    pass
 
         if groups == "*":
             selector_array['type']['all'] = True
@@ -453,8 +547,9 @@ class Matrix:
                 condition_starts_with = condition.split(':=')
                 condition_ends_with = condition.split('=:')
                 condition_in = condition.split('<-')
-                condition_gtreq = condition.split('>=')
-                condition_lesseq = condition.split('<=')
+                condition_not_in = condition.split('->')
+                condition_gtr_eq = condition.split('>=')
+                condition_less_eq = condition.split('<=')
                 condition_gtr = condition.split('>')
                 condition_less = condition.split('<')
                 if len(condition_equals) != 1:
@@ -481,26 +576,29 @@ class Matrix:
                         "operator": 'ends_with',
                         "value": condition_ends_with[1].strip()
                     })
-                elif len(condition_gtreq) != 1:
-                    condition_gtr = []
+                elif len(condition_gtr_eq) != 1:
                     conditions_array.append({
-                        "attribute": condition_gtreq[0].strip(),
+                        "attribute": condition_gtr_eq[0].strip(),
                         "operator": 'gtr_equ',
-                        "value": condition_gtreq[1].strip()
+                        "value": condition_gtr_eq[1].strip()
                     })
                 elif len(condition_in) != 1:
-                    condition_less = []
                     conditions_array.append({
                         "attribute": condition_in[0].strip(),
-                        "operator": 'in_array',
+                        "operator": 'in',
                         "value": condition_in[1].strip()
                     })
-                elif len(condition_lesseq) != 1:
-                    condition_less = []
+                elif len(condition_not_in) != 1:
                     conditions_array.append({
-                        "attribute": condition_lesseq[0].strip(),
+                        "attribute": condition_not_in[0].strip(),
+                        "operator": "not_in",
+                        "value": condition_not_in[1].strip()
+                    })
+                elif len(condition_less_eq) != 1:
+                    conditions_array.append({
+                        "attribute": condition_less_eq[0].strip(),
                         "operator": 'less_equ',
-                        "value": condition_lesseq[1].strip()
+                        "value": condition_less_eq[1].strip()
                     })
                 elif len(condition_gtr) != 1:
                     conditions_array.append({
@@ -538,10 +636,12 @@ class Matrix:
         query_array['conditions'] = conditions_array
         return query_array
 
+    # returns items that match all the query conditions
     def select_items_from_query_array(self, query_array):
         conditions = query_array['conditions']
         return [item for item in self.items if self.valid_item_from_conditions(item, conditions)]
 
+    # tests if all conditions match
     def valid_item_from_conditions(self, item, conditions):
         valid_item = True
         for condition in conditions:
@@ -558,7 +658,7 @@ class Matrix:
                 return True
             except:
                 return False
-        elif test_type == "string":
+        elif test_type == "string" or test_type == "array":
             return True
         else:
             raise Exception(test_type + " is an invalid type")
@@ -566,47 +666,78 @@ class Matrix:
     def valid_item_from_condition(self, item, condition):
         value = condition['attribute']
         value_parts = value.split('.')
+
+        # gets all the modifiers and puts them into an array then removes them from the value_parts var
+        modifiers = []
+        new_value_parts = []
+        for value_part in value_parts:
+            if value_part not in self.attribute_modifiers:
+                new_value_parts.append(value_part)
+            else:
+                modifiers.append(value_part)
+        value_parts = new_value_parts
+
         current_tree = self.attribute_tree
         part_count = 0
         for value_part in value_parts:
-            if value_part in current_tree:
+            if value_part in current_tree or value_part in self.attribute_modifiers:
                 if "parent" in current_tree[value_part] and len(value_parts) > part_count + 1:
                     current_tree = current_tree[value_part]['sub_attributes']
                 else:
                     attribute = current_tree[value_part]
+
+                    for modifier in modifiers:
+                        current_type = attribute['type']
+                        modifier_info = self.attribute_modifiers[modifier]
+                        if current_type in modifier_info['valid_types']:
+                            attribute['valid_ops'] = modifier_info['valid_ops']
+                        else:
+                            raise Exception(current_type + ' is not a supported input for the ' + modifier + ' modifier')
+
                     if condition['operator'] in attribute['valid_ops']:
                         if self.valid_value_from_type(condition['value'], attribute['type']):
                             case_sensitive = "case_sensitive" not in condition or condition['case_sensitive']
                             if not case_sensitive:
                                 condition['value'] = condition['value'].lower()
+
+                            # gets the returned value from the functions
+                            if "sub_main_function" in attribute and len(value_parts) > part_count + 1:
+                                function_return_value = attribute['sub_main_function'](item, value_parts[part_count + 1])
+                            else:
+                                function_return_value = attribute['function'](item)
+
+                            for modifier in modifiers:
+                                modifier_function = self.attribute_modifiers[modifier]['function']
+                                function_return_value = modifier_function(function_return_value)
+
                             operator = condition['operator']
                             if operator == "in":
-                                return attribute['function'](item, condition['value'])
+                                return function_return_value is not None and condition['value'] in function_return_value
                             elif operator == "not_in":
-                                return not attribute['function'](item, condition['value'])
+                                return function_return_value is None or condition['value'] not in function_return_value
                             elif operator == "equals":
-                                return attribute['function'](item) is not None and self.lower_if_false(
-                                    attribute['function'](item), case_sensitive) == condition['value']
+                                return function_return_value is not None and self.lower_if_false(
+                                    function_return_value, case_sensitive) == condition['value']
                             elif operator == "not_equals":
-                                return self.lower_if_false(attribute['function'](item), case_sensitive) != condition['value']
+                                return self.lower_if_false(function_return_value, case_sensitive) != condition['value']
                             elif operator == "gtr":
-                                return attribute['function'](item) is not None and attribute['function'](item) > \
+                                return function_return_value is not None and function_return_value > \
                                        int(condition['value'])
                             elif operator == "less":
-                                return attribute['function'](item) is not None and attribute['function'](item) < \
+                                return function_return_value is not None and function_return_value < \
                                        int(condition['value'])
                             elif operator == "gtr_equ":
-                                return attribute['function'](item) is not None and attribute['function'](item) >= \
+                                return function_return_value is not None and function_return_value >= \
                                        int(condition['value'])
                             elif operator == "less_equ":
-                                return attribute['function'](item) is not None and attribute['function'](item) <= \
+                                return function_return_value is not None and function_return_value <= \
                                        int(condition['value'])
                             elif operator == "starts_with":
-                                return attribute['function'](item) is not None and self.lower_if_false(
-                                    str(attribute['function'](item)), case_sensitive).startswith(condition['value'])
+                                return function_return_value is not None and self.lower_if_false(
+                                    str(function_return_value), case_sensitive).startswith(condition['value'])
                             elif operator == "ends_with":
-                                return attribute['function'](item) is not None and self.lower_if_false(
-                                    str(attribute['function'](item)), case_sensitive).endswith(condition['value'])
+                                return function_return_value is not None and self.lower_if_false(
+                                    str(function_return_value), case_sensitive).endswith(condition['value'])
                         raise Exception("INVALID DATATYPE " + condition['value'] + " can not be a " + attribute['type'])
                     raise Exception(condition['operator'] + " is an invalid operator for " + condition['attribute'])
             else:
