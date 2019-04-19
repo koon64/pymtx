@@ -360,7 +360,6 @@ class Matrix:
                 "valid_types": [
                     "string"
                 ],
-                "change_to_type": "array",
                 "valid_ops": [
                     "in",
                     "not_in"
@@ -371,12 +370,21 @@ class Matrix:
                 "valid_types": [
                     "string"
                 ],
-                "change_to_type": "string",
                 "valid_ops": [
                     "equals",
                     "not_equals"
                 ],
                 "function": self.attribute_modifier.lower
+            },
+            "upper": {
+                "valid_types": [
+                    "string"
+                ],
+                "valid_ops": [
+                    "equals",
+                    "not_equals"
+                ],
+                "function": self.attribute_modifier.upper
             }
         }
 
