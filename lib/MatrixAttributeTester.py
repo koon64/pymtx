@@ -47,6 +47,8 @@ class MatrixAttributeTester:
     def name_value(self, item):
         if type(item) is MatrixPerson:
             return item.name.full
+        else:
+            return str(item.name)
 
     def name_value_given(self, item):
         if type(item) is MatrixPerson:
@@ -162,4 +164,22 @@ class MatrixAttributeTester:
         if type(item) is MatrixPerson:
             return [email.email for email in item.emails]
 
+    # returns all classes
+    def get_classes(self, item):
+        if type(item) is MatrixPerson and item.student:
+            return [class_obj.name for class_obj in item.classes]
+
+    # returns all teachers
+    def get_teachers(self, item):
+        if type(item) is MatrixPerson and item.student:
+            return [class_obj.teacher for class_obj in item.classes if not class_obj.is_free]
+
+    # returns a class from its subject
+    def get_class_from_subject(self, item, subject):
+        if type(item) is MatrixPerson and item.student:
+            classes = item.get_class_from_subject(subject)
+            if classes:
+                return classes[0]
+            else:
+                return None
 

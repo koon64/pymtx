@@ -19,5 +19,5 @@ class MatrixSchool(MatrixItem):
         self.address = MatrixAddress("location", location['lat'], location['lng'], location['full_address'])
 
     def __str__(self):
-        return self.tag
+        return "[ MTX SCHOOL <" + self.tag + "> " + str(self.name) + " ]"
 

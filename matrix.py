@@ -23,6 +23,8 @@ class Matrix:
         self.db_created = None
         self.db_updated = None
         self.items = []
+        self.classes = []
+        self.class_names = []
         self.groups = []
         self.debug = debug
 
@@ -352,6 +354,23 @@ class Matrix:
                     "in",
                     "not_in"
                 ]
+            },
+            "teachers": {
+                "type": "array",
+                "function": self.attribute_tester.get_teachers,
+                "valid_ops": [
+                    "in",
+                    "not_in"
+                ]
+            },
+            "classes": {
+                "type": "array",
+                "function": self.attribute_tester.get_classes,
+                "valid_ops": [
+                    "in",
+                    "not_in"
+                ],
+                "sub_main_function": self.attribute_tester.get_class_from_subject
             }
         }
         self.attribute_modifier = MatrixAttributeModifier()
@@ -368,23 +387,48 @@ class Matrix:
             },
             "lower": {
                 "valid_types": [
-                    "string"
+                    "string",
+                    "array"
                 ],
                 "valid_ops": [
                     "equals",
-                    "not_equals"
+                    "not_equals",
+                    "starts_with",
+                    "ends_with",
+                    "in",
+                    "not_in"
                 ],
                 "function": self.attribute_modifier.lower
             },
             "upper": {
                 "valid_types": [
+                    "string",
+                    "array"
+                ],
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "starts_with",
+                    "ends_with",
+                    "in",
+                    "not_in"
+                ],
+                "function": self.attribute_modifier.upper
+            },
+            "len": {
+                "valid_types": [
+                    "array",
                     "string"
                 ],
                 "valid_ops": [
                     "equals",
-                    "not_equals"
+                    "not_equals",
+                    "gtr",
+                    "less",
+                    "gtr_equ",
+                    "less_equ"
                 ],
-                "function": self.attribute_modifier.upper
+                "function": self.attribute_modifier.count
             }
         }
 
@@ -428,12 +472,11 @@ class Matrix:
     # searches from a persons full name
     def simple_search(self, name):
         return self.select_items_from_query_array({
-            "selectors": [
+            "conditions": [
                 {
-                    "attribute": "name",
+                    "attribute": "name.lower",
                     "operator": "starts_with",
-                    "value": name,
-                    "case_sensitive": False
+                    "value": name
                 }
             ]
         })
@@ -461,6 +504,12 @@ class Matrix:
             if group.name == group_name:
                 return group
         return None
+
+    # gets a class from its name
+    def get_class(self, period, room):
+        for class_obj in self.classes:
+            if class_obj.period == period and class_obj.room == room:
+                return class_obj
 
     # queries items from a string similar to SQL
     def query(self, query_string):

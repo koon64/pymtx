@@ -96,13 +96,19 @@ class MatrixPerson(MatrixItem):
                                                                 period = self.period_match("{}{}".format(r_num,
                                                                                                          rotation_period))
                                                                 if class_dict["name"] != "free":
-                                                                    rotation_obj.add_class(MatrixSchoolClass(
-                                                                        class_dict["name"],
-                                                                        class_dict["teachers"],
-                                                                        class_dict["room"],
-                                                                        period))
+                                                                    class_obj = matrix_instance.get_class(period, class_dict['room'])
+                                                                    if class_obj is None:
+                                                                        class_obj = MatrixSchoolClass(
+                                                                            class_dict["name"],
+                                                                            class_dict["teachers"],
+                                                                            class_dict["room"],
+                                                                            period)
+                                                                        matrix_instance.classes.append(class_obj)
+                                                                        matrix_instance.class_names.append(class_obj.name)
+                                                                    class_obj.add_student(self)
+                                                                    rotation_obj.add_class(class_obj)
                                                                 else:
-                                                                    rotation_obj.add_class(MatrixSchoolFree())
+                                                                    rotation_obj.add_class(MatrixSchoolFree(period))
                                                                 rotation_period += 1
                                                         else:
                                                             if matrix_instance.debug:
@@ -189,6 +195,56 @@ class MatrixPerson(MatrixItem):
         }
         return period_match[rotation_period]
 
+    # returns a class from its subject
+    def get_class_from_subject(self, subject):
+        return [class_obj for class_obj in self.classes if class_obj.subject == subject]
+
+    # returns all the classes a student has
+    @property
+    def classes(self):
+        if self.student:
+            school_year = self.current_school_year
+            if school_year is not None:
+                if school_year.semesters[1].schedule is not None:
+                    schedule = school_year.semesters[1].schedule
+                elif school_year.semesters[0].schedule is not None:
+                    schedule = school_year.semesters[0].schedule
+                else:
+                    return []
+                classes = []
+                class_names = []
+                for rotation in schedule.rotations:
+                    for class_obj in rotation.classes:
+                        if not class_obj.is_free and class_obj.name not in class_names:
+                            classes.append(class_obj)
+                            class_names.append(class_obj.name)
+                return classes
+        return []
+
+    # returns all the teachers a student has
+    @property
+    def teachers(self):
+        if self.student:
+            return [class_obj.teacher for class_obj in self.classes]
+        return []
+
+    # returns the current school year obj
+    @property
+    def current_school_year(self):
+        now = _.time.now()
+        month = now.month
+        year = now.year
+        for year_obj in self.school_years:
+            year_parts = year_obj.year.split('-')
+            beginning_year = int(year_parts[0])
+            if 8 <= month:
+                # beginning of year
+                if beginning_year == year:
+                    return year_obj
+            else:
+                if beginning_year + 1 == year:
+                    return year_obj
+
     # returns the age if the birthdate is set
     @property
     def age(self):
@@ -220,4 +276,3 @@ class MatrixPerson(MatrixItem):
             return _.get_grade(self.yog)
         if self.matrix_instance.debug:
             logging.warning(str(self) + " is not a student, therefore can not get the grade")
-
