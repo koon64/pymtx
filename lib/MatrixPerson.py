@@ -2,13 +2,20 @@ import logging
 from lib.MatrixItem import MatrixItem
 from lib.MatrixPhone import MatrixPhone
 from lib.MatrixEmail import MatrixEmail
-from lib.MatrixPersonName import MatrixPersonName
 from lib.MatrixAddress import MatrixAddress
 from lib.MatrixBirthdate import MatrixBirthdate
 from lib.MatrixSchoolYear import MatrixSchoolYear
+from lib.MatrixPersonName import MatrixPersonName
+from lib.MatrixInstagramTag import MatrixInstagramTag
+from lib.MatrixYoutubeVideo import MatrixYoutubeVideo
+from lib.MatrixInstagramPost import MatrixInstagramPost
+from lib.MatrixInstagramLike import MatrixInstagramLike
 from lib.MatrixSchoolRotation import MatrixSchoolRotation
-from lib.MatrixSchoolClass import MatrixSchoolClass, MatrixSchoolFree
 from lib.MatrixSchoolSchedule import MatrixSchoolSchedule
+from lib.MatrixYoutubeAccount import MatrixYoutubeAccount
+from lib.MatrixInstagramComment import MatrixInstagramComment
+from lib.MatrixInstagramAccount import MatrixInstagramAccount
+from lib.MatrixSchoolClass import MatrixSchoolClass, MatrixSchoolFree
 from unders import Underscore
 
 _ = Underscore()
@@ -59,7 +66,7 @@ class MatrixPerson(MatrixItem):
                                                  item_dict['data']['birthdate']['zodiac_emoji'])
             # sets the gender
             self.sex = item_dict['data']['sex']
-            # education
+            # sets up all the education objs
             self.school_years = []
             self.student = False
             if item_dict['data']['education'] and "yog" in item_dict['data']['education']:
@@ -120,6 +127,75 @@ class MatrixPerson(MatrixItem):
                                         self.school_years.append(year_obj)
                 else:
                     print(item_dict['data']['education']['yog'])
+            # sets up social media accounts
+            self.social_media_account = []
+            # tests if there is the social_media in the item_dict
+            if "social_media" in item_dict['data']['communication']:
+                social_media_dict = item_dict['data']['communication']['social_media']
+                # loops through each social media account a person has
+                for social_media_type in social_media_dict:
+                    social_media_account = social_media_dict[social_media_type]
+                    cached = {
+                        "name": None,
+                        "profile_image": None,
+                        "biography": None,
+                        "private": None,
+                        "followers": None,
+                        "following": None
+                    }
+                    for i in social_media_account['cached']:
+                        cached[i] = social_media_account['cached'][i]
+                    if social_media_type == "instagram":
+                        # sets up the instagram obj
+                        self.social_media_account.append(MatrixInstagramAccount(social_media_account['user_id'],
+                                                                                cached['name'],
+                                                                                cached['profile_image'],
+                                                                                cached['biography'],
+                                                                                cached['username'],
+                                                                                cached['private'],
+                                                                                cached['followers'],
+                                                                                cached['following']))
+                    elif social_media_type == "youtube":
+                        self.social_media_account.append(MatrixYoutubeAccount(social_media_account['user_id'],
+                                                                              cached['name'],
+                                                                              cached['profile_image']['url'],
+                                                                              cached['description'],
+                                                                              cached['subscribers'],
+                                                                              cached['views'],
+                                                                              cached['video_count']))
+            self.social_history = []
+            if "social_history" in item_dict['data']:
+                social_history = item_dict['data']['social_history']
+                for node_time in social_history:
+                    node = social_history[node_time]
+                    datetime = node_time
+                    social_media_node = None
+                    if node['from'] == "instagram":
+                        if node['type'] == 'post':
+                            social_media_node = MatrixInstagramPost(self, datetime, node['image_url'],
+                                                                    node['caption'], node['like_count'],
+                                                                    node['comment_count'])
+                        elif node['type'] == 'comment':
+                            if "post" in node:
+                                social_media_node = MatrixInstagramComment(self, datetime, node['comment'],
+                                                                           node['post']['image_url'])
+                        elif node['type'] == 'tag':
+                            if "post" in node:
+                                social_media_node = MatrixInstagramTag(self, datetime, node['post']['image_url'])
+                            # print(social_media_node)
+                        elif node['type'] == 'like':
+                            if "post" in node:
+                                social_media_node = MatrixInstagramLike(self, datetime, node['post']['image_url'])
+                    elif node['from'] == 'youtube':
+                        if node['type'] == 'video':
+                            video_id = _.between(node['thumbnail'], 'https://i.ytimg.com/vi/', '/mqdefault.jpg')
+                            social_media_node = MatrixYoutubeVideo(self, datetime, video_id, node['title'],
+                                                                   node['thumbnail'])
+                    if social_media_node is not None:
+                        self.social_history.append(social_media_node)
+                if self.tag == "student.max_aderholtkoon":
+                    pass
+                    # _.print(social_history)
 
     def __str__(self):
         return "[ MTX PERSON <"+self.tag+"> " + str(self.name) + " ]"

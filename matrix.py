@@ -26,6 +26,7 @@ class Matrix:
         self.classes = []
         self.class_names = []
         self.groups = []
+        self.social_nodes = []
         self.debug = debug
 
         # for querying
@@ -460,10 +461,31 @@ class Matrix:
                         self.items.append(matrix_item)
                     else:
                         raise Exception('"' + item_type + '" is an invalid item type')
+                # connects all the the items together after they are created
+                for node in self.social_nodes:
+                    if node.social_network == "instagram":
+                        post = self.get_ig_post_from_url(node.image_url)
+                        if post is not None:
+                            if node.node_type == "comment":
+                                node.connect_post(post)
+                            elif node.node_type == "tag":
+                                node.connect_post(post)
+                            elif node.node_type == "like":
+                                node.connect_post(post)
+                    print(node)
+
+
             else:
                 raise Exception("database version is outdated")
         else:
             raise Exception('"'+path+'" does not exist')
+
+    # returns an instagram post from its image url
+    def get_ig_post_from_url(self, image_url):
+        for node in self.social_nodes:
+            if node.social_network == "instagram" and node.node_type == "post":
+                if node.image_url == image_url:
+                    return node
 
     # loads a database from a url by storing it as cache then loads that local file
     def load_from_url(self, url, refresh_cache=False):
