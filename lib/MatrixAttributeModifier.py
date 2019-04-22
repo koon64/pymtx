@@ -18,6 +18,12 @@ class MatrixAttributeModifier:
     def words(self, text):
         if type(text) is str:
             return str(text).split()
+        elif type(text) is list:
+            all_words = []
+            for i in text:
+                if i is not None:
+                    all_words = all_words + i.split()
+            return all_words
 
     # turns a list into an int
     def count(self, array):

@@ -372,13 +372,90 @@ class Matrix:
                     "not_in"
                 ],
                 "sub_main_function": self.attribute_tester.get_class_from_subject
+            },
+            "instagram": {
+                "type": "int",
+                "function": self.attribute_tester.ig_id,
+                "valid_ops": [
+                    "equals",
+                    "not_equals"
+                ],
+                "parent": True,
+                "sub_attributes": {
+                    "username": {
+                        "type": "string",
+                        "function": self.attribute_tester.ig_username,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
+                    },
+                    "followers": {
+                        "type": "int",
+                        "function": self.attribute_tester.ig_follower_count,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "gtr",
+                            "less",
+                            "gtr_equ",
+                            "less_equ"
+                        ]
+                    },
+                    "following": {
+                        "type": "int",
+                        "function": self.attribute_tester.ig_following_count,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "gtr",
+                            "less",
+                            "gtr_equ",
+                            "less_equ"
+                        ]
+                    },
+                    "ff_ratio": {
+                        "type": "int",
+                        "function": self.attribute_tester.ig_ff_ratio,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "gtr",
+                            "less",
+                            "gtr_equ",
+                            "less_equ"
+                        ]
+                    }
+                }
+            },
+            "social_history": {
+                "type": "array",
+                "parent": True,
+                "function": self.attribute_tester.sh_nodes,
+                "valid_ops": [
+                    "in",
+                    "not_in"
+                ],
+                "sub_attributes": {
+                    "comments": {
+                        "type": "array",
+                        "function": self.attribute_tester.sh_comments,
+                        "valid_ops": [
+                            "in",
+                            "not_in"
+                        ]
+                    }
+                }
             }
         }
         self.attribute_modifier = MatrixAttributeModifier()
         self.attribute_modifiers = {
             "words": {
                 "valid_types": [
-                    "string"
+                    "string",
+                    "array"
                 ],
                 "valid_ops": [
                     "in",
@@ -466,15 +543,13 @@ class Matrix:
                     if node.social_network == "instagram":
                         post = self.get_ig_post_from_url(node.image_url)
                         if post is not None:
-                            if node.node_type == "comment":
+                            if node.node_type != "post":
                                 node.connect_post(post)
-                            elif node.node_type == "tag":
-                                node.connect_post(post)
-                            elif node.node_type == "like":
-                                node.connect_post(post)
-                    print(node)
-
-
+                                if node.node_type == "comment":
+                                    for mention in node.mentioned_usernames:
+                                        mentioned_person = self.get_ig_user_from_username(mention)
+                                        if mentioned_person is not None:
+                                            node.mentions.append(mentioned_person)
             else:
                 raise Exception("database version is outdated")
         else:
@@ -486,6 +561,12 @@ class Matrix:
             if node.social_network == "instagram" and node.node_type == "post":
                 if node.image_url == image_url:
                     return node
+
+    # returns a person from an instagram username
+    def get_ig_user_from_username(self, username):
+        for item in self.items:
+            if type(item) is MatrixPerson and item.instagram is not None and item.instagram.username == username:
+                return item
 
     # loads a database from a url by storing it as cache then loads that local file
     def load_from_url(self, url, refresh_cache=False):

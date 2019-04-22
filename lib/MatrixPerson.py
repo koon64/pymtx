@@ -128,7 +128,7 @@ class MatrixPerson(MatrixItem):
                 else:
                     print(item_dict['data']['education']['yog'])
             # sets up social media accounts
-            self.social_media_account = []
+            self.social_media_accounts = []
             # tests if there is the social_media in the item_dict
             if "social_media" in item_dict['data']['communication']:
                 social_media_dict = item_dict['data']['communication']['social_media']
@@ -147,7 +147,7 @@ class MatrixPerson(MatrixItem):
                         cached[i] = social_media_account['cached'][i]
                     if social_media_type == "instagram":
                         # sets up the instagram obj
-                        self.social_media_account.append(MatrixInstagramAccount(social_media_account['user_id'],
+                        self.social_media_accounts.append(MatrixInstagramAccount(social_media_account['user_id'],
                                                                                 cached['name'],
                                                                                 cached['profile_image'],
                                                                                 cached['biography'],
@@ -156,7 +156,7 @@ class MatrixPerson(MatrixItem):
                                                                                 cached['followers'],
                                                                                 cached['following']))
                     elif social_media_type == "youtube":
-                        self.social_media_account.append(MatrixYoutubeAccount(social_media_account['user_id'],
+                        self.social_media_accounts.append(MatrixYoutubeAccount(social_media_account['user_id'],
                                                                               cached['name'],
                                                                               cached['profile_image']['url'],
                                                                               cached['description'],
@@ -182,7 +182,6 @@ class MatrixPerson(MatrixItem):
                         elif node['type'] == 'tag':
                             if "post" in node:
                                 social_media_node = MatrixInstagramTag(self, datetime, node['post']['image_url'])
-                            # print(social_media_node)
                         elif node['type'] == 'like':
                             if "post" in node:
                                 social_media_node = MatrixInstagramLike(self, datetime, node['post']['image_url'])
@@ -193,9 +192,6 @@ class MatrixPerson(MatrixItem):
                                                                    node['thumbnail'])
                     if social_media_node is not None:
                         self.social_history.append(social_media_node)
-                if self.tag == "student.max_aderholtkoon":
-                    pass
-                    # _.print(social_history)
 
     def __str__(self):
         return "[ MTX PERSON <"+self.tag+"> " + str(self.name) + " ]"
@@ -275,6 +271,14 @@ class MatrixPerson(MatrixItem):
     def get_class_from_subject(self, subject):
         return [class_obj for class_obj in self.classes if class_obj.subject == subject]
 
+    # returns social media accounts from a network
+    def get_social_media_account(self, social_network):
+        return [account for account in self.social_media_accounts if account.account_type == social_network]
+
+    # returns all nodes from its node_type
+    def social_history_from_type(self, node_type):
+        return [node for node in self.social_history if node.node_type == node_type]
+
     # returns all the classes a student has
     @property
     def classes(self):
@@ -352,3 +356,40 @@ class MatrixPerson(MatrixItem):
             return _.get_grade(self.yog)
         if self.matrix_instance.debug:
             logging.warning(str(self) + " is not a student, therefore can not get the grade")
+
+    # returns first ig account that is in the social media accounts array
+    @property
+    def instagram(self):
+        accounts = self.get_social_media_account("instagram")
+        if len(accounts) > 0:
+            return accounts[0]
+
+    # returns first yt account that is in the social media accounts array
+    @property
+    def youtube(self):
+        accounts = self.get_social_media_account("youtube")
+        if len(accounts) > 0:
+            return accounts[0]
+
+    # returns all comment nodes from social_history
+    @property
+    def social_history_comments(self):
+        return self.social_history_from_type("comment")
+
+    # returns all post nodes from social_history
+    @property
+    def social_history_posts(self):
+        return self.social_history_from_type("posts")
+
+    # returns all like nodes from social_history
+    @property
+    def social_history_likes(self):
+        return self.social_history_from_type("like")
+
+    # returns all like nodes from social_history
+    @property
+    def social_history_tags(self):
+        return self.social_history_from_type("tag")
+
+
+

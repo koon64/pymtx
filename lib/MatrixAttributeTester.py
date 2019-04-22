@@ -183,3 +183,51 @@ class MatrixAttributeTester:
             else:
                 return None
 
+    # returns a person's instagram id
+    def ig_id(self, item):
+        if type(item) is MatrixPerson and item.instagram is not None:
+            return item.instagram.id
+
+    # instagram username
+    def ig_username(self, item):
+        if type(item) is MatrixPerson and item.instagram is not None:
+            return item.instagram.username
+
+    # # of followers
+    def ig_follower_count(self, item):
+        if type(item) is MatrixPerson and item.instagram is not None:
+            return item.instagram.followers
+
+    # # of following
+    def ig_following_count(self, item):
+        if type(item) is MatrixPerson and item.instagram is not None:
+            return item.instagram.following
+
+    # ratio of followers to following
+    def ig_ff_ratio(self, item):
+        if type(item) is MatrixPerson and item.instagram is not None:
+            return item.instagram.followers / item.instagram.following
+
+    # returns all the nodes in a social_history
+    def sh_nodes(self, item):
+        if type(item) is MatrixPerson:
+            all_content = []
+            for node in item.social_history:
+                if node.node_type == "post":
+                    all_content.append(node.caption)
+                elif node.node_type == "comment":
+                    all_content.append(node.comment)
+                elif node.node_type == "video":
+                    all_content.append(node.title)
+            return all_content
+
+    # returns all comments from social_history
+    def sh_comments(self, item):
+        if type(item) is MatrixPerson:
+            return [node.comment for node in item.social_history_comments]
+
+    # returns all post captions from social_history
+    def sh_post_captions(self, item):
+        if type(item) is MatrixPerson:
+            return [node.caption for node in item.social_history_posts]
+
