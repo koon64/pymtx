@@ -7,13 +7,35 @@ class MatrixSchoolClass:
         self.is_free = False
         self.students = []
         self.subject = self.get_class_type(class_name)
+        self.math_level = self.get_math_level(class_name) if self.subject == "math" else None
 
     def __str__(self):
         return "[ MTX CLASS {} with {} P.{} ({} students) Rm. {} ]".format(self.name, self.teacher, self.period, len(self.students), self.room)
 
+    @property
+    def math_level_string(self):
+        return "M{}".format(str(self.math_level + 1)) \
+            if self.math_level != 0 else "S1" \
+            if self.math_level is not None else ""
+
     def add_student(self, student):
         if student not in self.students:
             self.students.append(student)
+
+    def get_math_level(self, class_name):
+        if class_name == "Integrated Math 1":
+            return 0
+        level_maps = [
+            "S1",
+            "M2",
+            "M3",
+            "M4"
+        ]
+        counter = 0
+        for level in level_maps:
+            if level in class_name:
+                return counter
+            counter += 1
 
     def get_class_type(self, class_name):
         key_words = {

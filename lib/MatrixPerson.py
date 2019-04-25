@@ -69,6 +69,7 @@ class MatrixPerson(MatrixItem):
             # sets up all the education objs
             self.school_years = []
             self.student = False
+            self.math_level = None
             if item_dict['data']['education'] and "yog" in item_dict['data']['education']:
                 if item_dict['data']['education']['yog'] != "":
                     self.yog = int(item_dict['data']['education']['yog'])
@@ -103,17 +104,25 @@ class MatrixPerson(MatrixItem):
                                                                 period = self.period_match("{}{}".format(r_num,
                                                                                                          rotation_period))
                                                                 if class_dict["name"] != "free":
+                                                                    # attempts to get the obj from the main class
                                                                     class_obj = matrix_instance.get_class(period, class_dict['room'])
                                                                     if class_obj is None:
+                                                                        # creates the class
                                                                         class_obj = MatrixSchoolClass(
                                                                             class_dict["name"],
                                                                             class_dict["teachers"],
                                                                             class_dict["room"],
                                                                             period)
+                                                                        # adds it to the main class
                                                                         matrix_instance.classes.append(class_obj)
-                                                                        matrix_instance.class_names.append(class_obj.name)
+                                                                    # adds the student to the class object
                                                                     class_obj.add_student(self)
+                                                                    # adds the class to the rotation class
                                                                     rotation_obj.add_class(class_obj)
+                                                                    # sets the highest math level if set in the class
+                                                                    if class_obj.math_level is not None:
+                                                                        if self.math_level is None or class_obj.math_level > self.math_level:
+                                                                            self.math_level = class_obj.math_level
                                                                 else:
                                                                     rotation_obj.add_class(MatrixSchoolFree(period))
                                                                 rotation_period += 1
@@ -126,7 +135,8 @@ class MatrixPerson(MatrixItem):
                                                 s_num += 1
                                         self.school_years.append(year_obj)
                 else:
-                    print(item_dict['data']['education']['yog'])
+                    if matrix_instance.debug:
+                        logging.error("something went wrong with" + str(self))
             # sets up social media accounts
             self.social_media_accounts = []
             # tests if there is the social_media in the item_dict
@@ -148,21 +158,22 @@ class MatrixPerson(MatrixItem):
                     if social_media_type == "instagram":
                         # sets up the instagram obj
                         self.social_media_accounts.append(MatrixInstagramAccount(social_media_account['user_id'],
-                                                                                cached['name'],
-                                                                                cached['profile_image'],
-                                                                                cached['biography'],
-                                                                                cached['username'],
-                                                                                cached['private'],
-                                                                                cached['followers'],
-                                                                                cached['following']))
+                                                                                 cached['name'],
+                                                                                 cached['profile_image'],
+                                                                                 cached['biography'],
+                                                                                 cached['username'],
+                                                                                 cached['private'],
+                                                                                 cached['followers'],
+                                                                                 cached['following']))
                     elif social_media_type == "youtube":
+                        # sets up the youtube obj
                         self.social_media_accounts.append(MatrixYoutubeAccount(social_media_account['user_id'],
-                                                                              cached['name'],
-                                                                              cached['profile_image']['url'],
-                                                                              cached['description'],
-                                                                              cached['subscribers'],
-                                                                              cached['views'],
-                                                                              cached['video_count']))
+                                                                               cached['name'],
+                                                                               cached['profile_image']['url'],
+                                                                               cached['description'],
+                                                                               cached['subscribers'],
+                                                                               cached['views'],
+                                                                               cached['video_count']))
             self.social_history = []
             if "social_history" in item_dict['data']:
                 social_history = item_dict['data']['social_history']
@@ -391,5 +402,9 @@ class MatrixPerson(MatrixItem):
     def social_history_tags(self):
         return self.social_history_from_type("tag")
 
-
-
+    # returns a string of the math level
+    @property
+    def math_level_string(self):
+        return "M{}".format(str(self.math_level + 1)) \
+            if self.math_level != 0 else "S1" \
+            if self.math_level is not None else ""

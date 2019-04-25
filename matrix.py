@@ -24,7 +24,6 @@ class Matrix:
         self.db_updated = None
         self.items = []
         self.classes = []
-        self.class_names = []
         self.groups = []
         self.social_nodes = []
         self.debug = debug
@@ -372,6 +371,18 @@ class Matrix:
                     "not_in"
                 ],
                 "sub_main_function": self.attribute_tester.get_class_from_subject
+            },
+            "math_level": {
+                "type": "int",
+                "function": self.attribute_tester.get_math_level,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "gtr",
+                    "less",
+                    "gtr_equ",
+                    "less_equ"
+                ]
             },
             "instagram": {
                 "type": "int",

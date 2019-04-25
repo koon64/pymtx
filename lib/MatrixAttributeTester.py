@@ -231,3 +231,7 @@ class MatrixAttributeTester:
         if type(item) is MatrixPerson:
             return [node.caption for node in item.social_history_posts]
 
+    # returns math level
+    def get_math_level(self, item):
+        if type(item) is MatrixPerson and item.student:
+            return item.math_level
