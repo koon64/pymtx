@@ -561,10 +561,23 @@ class Matrix:
                                         mentioned_person = self.get_ig_user_from_username(mention)
                                         if mentioned_person is not None:
                                             node.mentions.append(mentioned_person)
+                # connects all the relationships together
+                for item in self.items:
+                    if item.type == "person":
+                        for relationship in item.relationships:
+                            matched_item = self.get_item_from_tag(relationship.item2)
+                            if matched_item is not None:
+                                relationship.link_second_person(matched_item)
             else:
                 raise Exception("database version is outdated")
         else:
             raise Exception('"'+path+'" does not exist')
+
+    # returns item from tag
+    def get_item_from_tag(self, tag):
+        for item in self.items:
+            if item.tag == tag:
+                return item
 
     # returns an instagram post from its image url
     def get_ig_post_from_url(self, image_url):

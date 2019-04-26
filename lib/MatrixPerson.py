@@ -6,6 +6,7 @@ from lib.MatrixAddress import MatrixAddress
 from lib.MatrixBirthdate import MatrixBirthdate
 from lib.MatrixSchoolYear import MatrixSchoolYear
 from lib.MatrixPersonName import MatrixPersonName
+from lib.MatrixRelationship import MatrixRelationship
 from lib.MatrixInstagramTag import MatrixInstagramTag
 from lib.MatrixYoutubeVideo import MatrixYoutubeVideo
 from lib.MatrixInstagramPost import MatrixInstagramPost
@@ -203,6 +204,17 @@ class MatrixPerson(MatrixItem):
                                                                    node['thumbnail'])
                     if social_media_node is not None:
                         self.social_history.append(social_media_node)
+            # adds all the relationships
+            self.relationships = []
+            if "relationships" in item_dict['data']:
+                relationships = item_dict['data']['relationships']
+                for tag in relationships:
+                    relationship = relationships[tag]
+                    tag = tag.replace("people.", "person.")
+                    if type(relationship) is not str:
+                        relationship = relationship['type']
+                    relationship_obj = MatrixRelationship(self, tag, relationship)
+                    self.relationships.append(relationship_obj)
 
     def __str__(self):
         return "[ MTX PERSON <"+self.tag+"> " + str(self.name) + " ]"
