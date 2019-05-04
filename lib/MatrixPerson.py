@@ -302,6 +302,66 @@ class MatrixPerson(MatrixItem):
     def social_history_from_type(self, node_type):
         return [node for node in self.social_history if node.node_type == node_type]
 
+    # returns all relationships from a type
+    def get_relationship_from_type(self, relationship_type):
+        return [rel.item2 for rel in self.relationships if rel.relationship == relationship_type]
+
+    # returns all relationships from a group
+    def get_relationship_from_group(self, relationship_group):
+        return [rel.item2 for rel in self.relationships if relationship_group == rel.relationship_group]
+
+    @property
+    def father(self):
+        return self.get_relationship_from_type('father')[0]
+
+    @property
+    def mother(self):
+        return self.get_relationship_from_type('mother')[0]
+
+    @property
+    def brother(self):
+        return self.get_relationship_from_type('brother')[0]
+
+    @property
+    def brothers(self):
+        return [rel for rel in self.get_relationship_from_type('brother')]
+
+    @property
+    def sister(self):
+        return self.get_relationship_from_type('sister')[0]
+
+    @property
+    def sisters(self):
+        return [rel for rel in self.get_relationship_from_type('sister')]
+
+    @property
+    def son(self):
+        return self.get_relationship_from_type('son')[0]
+
+    @property
+    def sons(self):
+        return self.get_relationship_from_type('son')
+
+    @property
+    def daughter(self):
+        return self.get_relationship_from_type('daughter')[0]
+
+    @property
+    def daughters(self):
+        return self.get_relationship_from_type('daughter')
+
+    @property
+    def parents(self):
+        return self.get_relationship_from_group('parents')
+
+    @property
+    def children(self):
+        return self.get_relationship_from_group('children')
+
+    @property
+    def siblings(self):
+        return self.get_relationship_from_group('siblings')
+
     # returns all the classes a student has
     @property
     def classes(self):
