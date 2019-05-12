@@ -86,10 +86,22 @@ class MatrixPerson(MatrixItem):
                                         if "quarters" in year_dict:
                                             q_num = 0
                                             for quarter_dict in year_dict["quarters"]:
+                                                if type(quarter_dict) is str:
+                                                    quarter_dict = year_dict["quarters"][quarter_dict]
                                                 if type(quarter_dict) is dict:
-                                                    if quarter_dict["honors_role"]:
-                                                        year_obj.quarters[q_num].set_honors(True,
-                                                                                            quarter_dict["high_honors"])
+                                                    if "honors_role" in quarter_dict:
+                                                        if quarter_dict["honors_role"]:
+                                                            year_obj.quarters[q_num].set_honors(True,
+                                                                                                quarter_dict["high_honors"])
+                                                    if "grades" in quarter_dict:
+                                                        grades = quarter_dict['grades']
+                                                        for class_name in grades:
+                                                            if class_name == "gpa":
+                                                                year_obj.quarters[q_num].gpa = float(grades['gpa'])
+                                                            else:
+                                                                year_obj.quarters[q_num].add_class_grade(class_name, grades[class_name])
+                                                        if "gpa" not in grades:
+                                                            year_obj.quarters[q_num].gpa = year_obj.quarters[q_num].calculate_quarter_gpa()
                                                 q_num += 1
                                         if "semesters" in year_dict:
                                             s_num = 0
@@ -134,6 +146,15 @@ class MatrixPerson(MatrixItem):
                                                         r_num += 1
                                                     year_obj.semesters[s_num].set_schedule(schedule_obj)
                                                 s_num += 1
+                                        classes = self.get_classes_from_year(year_obj)
+                                        class_names = [class_obj.name.lower() for class_obj in classes]
+                                        for quarter in year_obj.quarters:
+                                            for class_grade in quarter.class_grades:
+                                                class_name = class_grade.name.lower()
+                                                class_name = class_name.replace(" (with lab)", "")
+                                                if class_name in class_names:
+                                                    class_obj = classes[class_names.index(class_name)]
+                                                    class_grade.link_class(class_obj)
                                         self.school_years.append(year_obj)
                 else:
                     if matrix_instance.debug:
@@ -310,6 +331,25 @@ class MatrixPerson(MatrixItem):
     def get_relationship_from_group(self, relationship_group):
         return [rel.item2 for rel in self.relationships if relationship_group == rel.relationship_group]
 
+    # returns all classes from a year_obj
+    def get_classes_from_year(self, school_year):
+        if school_year is not None:
+            if school_year.semesters[1].schedule is not None:
+                schedule = school_year.semesters[1].schedule
+            elif school_year.semesters[0].schedule is not None:
+                schedule = school_year.semesters[0].schedule
+            else:
+                return []
+            classes = []
+            class_names = []
+            for rotation in schedule.rotations:
+                for class_obj in rotation.classes:
+                    if not class_obj.is_free and class_obj.name not in class_names:
+                        classes.append(class_obj)
+                        class_names.append(class_obj.name)
+            return classes
+        return []
+
     @property
     def father(self):
         return self.get_relationship_from_type('father')[0]
@@ -367,21 +407,7 @@ class MatrixPerson(MatrixItem):
     def classes(self):
         if self.student:
             school_year = self.current_school_year
-            if school_year is not None:
-                if school_year.semesters[1].schedule is not None:
-                    schedule = school_year.semesters[1].schedule
-                elif school_year.semesters[0].schedule is not None:
-                    schedule = school_year.semesters[0].schedule
-                else:
-                    return []
-                classes = []
-                class_names = []
-                for rotation in schedule.rotations:
-                    for class_obj in rotation.classes:
-                        if not class_obj.is_free and class_obj.name not in class_names:
-                            classes.append(class_obj)
-                            class_names.append(class_obj.name)
-                return classes
+            return self.get_classes_from_year(school_year)
         return []
 
     # returns all the teachers a student has

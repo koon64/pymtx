@@ -10,7 +10,7 @@ class MatrixSchoolClass:
         self.math_level = self.get_math_level(class_name) if self.subject == "math" else None
 
     def __str__(self):
-        return "[ MTX CLASS {} with {} P.{} ({} students) Rm. {} ]".format(self.name, self.teacher, self.period, len(self.students), self.room)
+        return "[ MTX CLASS {} with {} P.{} ({} students) Rm. {} ]".format(self.name, self.teacher, self.period + 1, len(self.students), self.room)
 
     @property
     def math_level_string(self):
