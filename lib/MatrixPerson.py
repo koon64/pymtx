@@ -96,12 +96,8 @@ class MatrixPerson(MatrixItem):
                                                     if "grades" in quarter_dict:
                                                         grades = quarter_dict['grades']
                                                         for class_name in grades:
-                                                            if class_name == "gpa":
-                                                                year_obj.quarters[q_num].gpa = float(grades['gpa'])
-                                                            else:
+                                                            if class_name != "gpa":
                                                                 year_obj.quarters[q_num].add_class_grade(class_name, grades[class_name])
-                                                        if "gpa" not in grades:
-                                                            year_obj.quarters[q_num].gpa = year_obj.quarters[q_num].calculate_quarter_gpa()
                                                 q_num += 1
                                         if "semesters" in year_dict:
                                             s_num = 0
@@ -506,3 +502,11 @@ class MatrixPerson(MatrixItem):
         return "M{}".format(str(self.math_level + 1)) \
             if self.math_level != 0 else "S1" \
             if self.math_level is not None else ""
+
+    @property
+    def gpa(self):
+        gpa = 0
+        for year in self.school_years:
+            gpa += year.gpa
+        return gpa / len(self.school_years)
+

@@ -11,4 +11,12 @@ class MatrixSchoolYear:
     def __str__(self):
         return self.year
 
-
+    @property
+    def gpa(self):
+        gpa = 0
+        valid_quarters = 0
+        for quarter in self.quarters:
+            if quarter.gpa > 0:
+                gpa += quarter.gpa
+                valid_quarters += 1
+        return gpa / valid_quarters

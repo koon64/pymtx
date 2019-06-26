@@ -31,6 +31,11 @@ class MatrixPersonName(MatrixName):
     def full_formatted(self):
         return "{}, {} {}".format(self.surname, self.given, self.middle)
 
+    # displays the first and last name
+    @property
+    def simple(self):
+        return "{} {}".format(self.given, self.surname)
+
     # displays a friendly name with a proffered first name: "John Smith"
     # if the proffered_first is set to something different than the given
     @property

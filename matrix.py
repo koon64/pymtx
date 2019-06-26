@@ -153,6 +153,16 @@ class Matrix:
                             "starts_with",
                             "ends_with"
                         ]
+                    },
+                    "simple": {
+                        "type": "string",
+                        "function": self.attribute_tester.name_value_simple,
+                        "valid_ops": [
+                            "equals",
+                            "not_equals",
+                            "starts_with",
+                            "ends_with"
+                        ]
                     }
                 }
             },
@@ -594,19 +604,52 @@ class Matrix:
 
     # loads a database from a url by storing it as cache then loads that local file
     def load_from_url(self, url, refresh_cache=False):
-        pass
+        url = str(url)
+        endpoint = url.split("?")[0]
+        endpoint_split_slash = endpoint.split("/")
+        endpoint = endpoint_split_slash[len(endpoint_split_slash) - 1]
+        file_name = ".mtx_cache_"+endpoint
+        if not _.file_exists(file_name) or refresh_cache:
+            json = _.ra(url)
+            if "items" not in json:
+                json = {"info": {"version": 2.0, "created": _.time.now().strftime("%m/%d/%Y"), "updated": _.time.now().strftime("%m/%d/%Y")}, "items": json['results']}
+            _.aj(json, file_name)
+            if self.debug:
+                print(file_name + ' was created')
+        self.load_from_file(file_name)
 
     # searches from a persons full name
     def simple_search(self, name):
         return self.select_items_from_query_array({
             "conditions": [
                 {
-                    "attribute": "name.lower",
+                    "attribute": "name.simple.lower",
                     "operator": "starts_with",
                     "value": name
                 }
             ]
         })
+
+    # searches for a person based on a full name (nicknames and all that jazz)
+    def name_match(self, name):
+        name = str(name).lower()
+        results = []
+        for item in self.items:
+            if type(item) is MatrixPerson:
+                simple_name_common_chars = (len(_.common(item.name.simple.lower(), name)) / len(item.name.simple)) * 10
+                display_name_common_chars = (len(_.common(item.name.display.lower(), name)) / len(item.name.display)) * 15
+                score = simple_name_common_chars + display_name_common_chars
+                for nickname in item.name.nicknames:
+                    nickname = str(nickname).lower()
+                    if nickname == name:
+                        score += 10
+                last_name_parts = item.name.surname.lower().split("-")
+                for last_name_part in last_name_parts:
+                    if item.name.proffered_first.lower() + " " + last_name_part[0] == name:
+                        score += 10
+                results.append({"item": item, "score": score})
+        results = sorted(results, key=lambda i: i['score'], reverse=True)
+        return results[0]['item']
 
     # searches for an item from its username (very basic, will update later with a query system)
     def search(self, query):

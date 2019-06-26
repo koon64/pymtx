@@ -62,6 +62,10 @@ class MatrixAttributeTester:
         if type(item) is MatrixPerson:
             return item.name.surname
 
+    def name_value_simple(self, item):
+        if type(item) is MatrixPerson:
+            return item.name.simple
+
     def item_tag(self, item):
         return item.tag
 
