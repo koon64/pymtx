@@ -58,7 +58,6 @@ class MatrixPerson(MatrixItem):
                                              self.matrix_instance.debug)
             # sets the birthday
             self.has_birthdate = item_dict['data']['birthdate']['date'] is not None
-            self.age
             if self.has_birthdate:
                 self.birthdate = MatrixBirthdate(item_dict['data']['birthdate']['date'],
                                                  item_dict['data']['birthdate']['dow'],
@@ -469,7 +468,7 @@ class MatrixPerson(MatrixItem):
         if self.has_birthdate:
             try:
                 return _.get_age(self.birthdate.date_string)
-            except:
+            except Exception as e:
                 self.has_birthdate = False
                 return None
 

@@ -708,7 +708,8 @@ class Matrix:
         words = query.split()
         query_array = {
             "command": "",
-            "conditions": []
+            "conditions": [],
+            "order": False
         }
         after_command = query.split(words[0])[1]
         words[0] = words[0].lower()
@@ -872,12 +873,32 @@ class Matrix:
         else:
             pass
         query_array['conditions'] = conditions_array
+
+        if len(order) > 1:
+            order_text = order[1].strip()
+            order_type = "HIGHEST" if order_text[0] == "^" else "LOWEST"
+            order_attribute = order_text[1:]
+            query_array['order'] = True
+            query_array['order_properties'] = {
+                "type": order_type,
+                "attribute": order_attribute
+            }
         return query_array
 
     # returns items that match all the query conditions
     def select_items_from_query_array(self, query_array):
         conditions = query_array['conditions']
-        return [item for item in self.items if self.valid_item_from_conditions(item, conditions)]
+        items = [item for item in self.items if self.valid_item_from_conditions(item, conditions)]
+        if not query_array['order']:
+            return items
+        else:
+            items_with_value = []
+            for item in items:
+                value = self.valid_item_from_condition(item, {'attribute': query_array['order_properties']['attribute'], 'operator': 'equals', 'value': ""}, return_value=True)
+                if value is not None:
+                    items_with_value.append({"item": item, "value": value})
+            items = sorted(items_with_value, key=lambda k: k['value'], reverse=query_array['order_properties']['type'] == "HIGHEST")
+            return [item['item'] for item in items]
 
     # tests if all conditions match
     def valid_item_from_conditions(self, item, conditions):
@@ -901,7 +922,7 @@ class Matrix:
         else:
             raise Exception(test_type + " is an invalid type")
 
-    def valid_item_from_condition(self, item, condition):
+    def valid_item_from_condition(self, item, condition, return_value=False):
         value = condition['attribute']
         value_parts = value.split('.')
 
@@ -933,7 +954,7 @@ class Matrix:
                             raise Exception(current_type + ' is not a supported input for the ' + modifier + ' modifier')
 
                     if condition['operator'] in attribute['valid_ops']:
-                        if self.valid_value_from_type(condition['value'], attribute['type']):
+                        if self.valid_value_from_type(condition['value'], attribute['type']) or return_value:
                             case_sensitive = "case_sensitive" not in condition or condition['case_sensitive']
                             if not case_sensitive:
                                 condition['value'] = condition['value'].lower()
@@ -944,9 +965,14 @@ class Matrix:
                             else:
                                 function_return_value = attribute['function'](item)
 
+
+
                             for modifier in modifiers:
                                 modifier_function = self.attribute_modifiers[modifier]['function']
                                 function_return_value = modifier_function(function_return_value)
+
+                            if return_value:
+                                return function_return_value
 
                             operator = condition['operator']
                             if operator == "in":
@@ -976,7 +1002,7 @@ class Matrix:
                             elif operator == "ends_with":
                                 return function_return_value is not None and self.lower_if_false(
                                     str(function_return_value), case_sensitive).endswith(condition['value'])
-                        raise Exception("INVALID DATATYPE " + condition['value'] + " can not be a " + attribute['type'])
+                        raise Exception("INVALID DATATYPE " + condition['value'] + " must be a " + attribute['type'])
                     raise Exception(condition['operator'] + " is an invalid operator for " + condition['attribute'])
             else:
                 raise Exception(value_part + ' is an invalid attribute')
