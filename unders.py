@@ -1,14 +1,21 @@
 import os
 import json
-import urllib3
 from datetime import datetime
 from math import log, floor, sqrt
 from re import sub, match
 from socket import gethostbyname, error
 from pprint import pprint
 from collections import Counter
+import urllib.request
+import random
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# try:
+#     import urllib3
+#     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# except:
+#
+#     print("Could not import urllib3")
 
 
 class Underscore:
@@ -21,11 +28,27 @@ class Underscore:
         self.dis = (1 * 60 * 60 * 24)  # day in seconds
         self.mis = (30.5 * 24 * 60 * 60)  # month in seconds
         self.yis = (365 * 24 * 60 * 60)  # year in seconds
+        self.grade_match = {
+            0: "Kindergartner",
+            9: "Freshman",
+            10: "Sophomore",
+            11: "Junior",
+            12: "Senior"
+        }
+        self.days_match = [
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
+            'Sunday'
+        ]
         # sub classes
         self.format = FormatClass(self)
         self.grades = GradesClass()
         self.time = TimeClass(self)
-        self.convert = ConvertClass()
+        self.convert = ConvertClass(self)
         self.math = MathClass()
         self.valid = ValidClass()
         self.parse = ParseClass(self)
@@ -50,7 +73,7 @@ class Underscore:
     def fs(self, file_path):
         if type(file_path) is str:
             if self.file_exists(file_path):
-                with open(file_path, 'r') as file:
+                with open(file_path, 'r', encoding='utf8') as file:
                     return file.read()
             else:
                 raise Exception('"' + file_path + '" does not exist')
@@ -83,9 +106,7 @@ class Underscore:
 
     # returns a string from the contents of a url
     def rs(self, url):
-        http = urllib3.PoolManager()
-        response = http.request('GET', url)
-        return str(response.data, "utf-8")
+        return urllib.request.urlopen(url).read()
 
     # returns an obj from a rest url
     def ra(self, url):
@@ -202,12 +223,69 @@ class Underscore:
         # resultant string
         return ''.join(common_chars)
 
+    # checks if a number is around a list of numbers
+
+    def is_around(self, int_list, target_number, threshold=1):
+        min_int, max_int = min(int_list), max(int_list)
+        min_diff, max_diff = abs(min_int - target_number), abs(max_int - target_number)
+        return min_diff < threshold or max_diff < threshold
+
+    # adds texts between a list of strings
+
+    def add_str_to_list(self, list, add_text=", ", last_text=""):
+        text = ""
+        list_counter = 0
+        for string in list:
+            string = str(string)
+            text += string
+            if list_counter < len(list) - 1:
+                if last_text != "" and len(list) - 2 == list_counter:
+                    text += last_text
+                else:
+                    text += add_text
+            list_counter += 1
+        return text
+
+    # formats a number string
+    # i know the code is shit
+
+    def format_int_list(self, list):
+        if len(list) == 1:
+            return str(list[0])
+        chunks = []
+        last_number = -2
+        chunk = []
+        index = 0
+        for i in list:
+            i = int(i)
+            new = chunk == []
+            has_next = i + -1 == last_number
+            if not has_next and not new or len(list) - 1 == index:
+                # add the number if it is the last number is the list
+                if len(list) - 1 == index:
+                    chunk.append(i)
+                # new chunk
+                chunks.append(chunk)
+                chunk = []
+            chunk.append(i)
+            last_number = i
+            index += 1
+        chunk_list = []
+        for chunk in chunks:
+            chunk_list.append(str(min(chunk)) + '-' + str(max(chunk)))
+        return self.add_str_to_list(chunk_list)
+
+    # flips a coin (50%)
+    def c(self):
+        return random.randint(0, 2) == 1
+
 
 class GradesClass:
     """Class for converting different grade formats"""
 
     # converts a letter grade to a gpa
     def grade_to_gpa(self, grade):
+        grade = str(grade).upper()
         amounts = {
             "A+": 4, "A": 4, "A-": 3.66, "-A": 3.66, "B+": 3.33, "B": 3, "B-": 2.66, "C+": 2.33, "C": 2, "C-": 1.66,
             "D": 1, "F": 0
@@ -252,7 +330,13 @@ class FormatClass:
 
     # formats a number with commas
     def number(self, number):
-        return "{:,}".format(number)
+        return "{:,}".format(int(number))
+
+    # formats a number with commas and decimal
+    def money(self, number):
+        number_string = str(number)
+        cents = number_string[-2:]
+        return self.number(number_string[:-2]) + '.' + cents
 
     # returns a string with the appropriate plural
     def plural(self, number, text):
@@ -312,6 +396,7 @@ class FormatClass:
             "focus": "foci",
             "foot": "feet",
             "formula": "formulae",
+            "freshman": "freshmen",
             "fungus": "fungi",
             "gallows": "gallows",
             "genus": "genera",
@@ -494,11 +579,40 @@ class TimeClass:
 
 
 class ConvertClass:
-    def __init__(self):
+    def __init__(self, underscore):
         self.decimal = ConvertDecimal()
         self.hex = ConvertHex(self.decimal)
         self.binary = ConvertBinary(self.decimal)
         self.ascii = ConvertAscii(self.decimal)
+        self._ = underscore
+
+    def money(self, amount, currency, base_currency="USD"):
+        response = self._.ra("https://api.exchangeratesapi.io/latest?base=" + str(base_currency).upper())
+        if "rates" in response:
+            rates = response['rates']
+            if str(currency).upper() in rates:
+                rate = rates[str(currency).upper()]
+                return amount * rate
+            else:
+                raise Exception(currency + " is an invalid currency")
+        else:
+            raise Exception("Could not get the rates from exchangeratesapi.io")
+
+    def number_to_words(self, number):
+        num2words = {1: 'One', 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five',
+                     6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine', 10: 'Ten',
+                     11: 'Eleven', 12: 'Twelve', 13: 'Thirteen', 14: 'Fourteen',
+                     15: 'Fifteen', 16: 'Sixteen', 17: 'Seventeen', 18: 'Eighteen',
+                     19: 'Nineteen', 20: 'Twenty', 30: 'Thirty', 40: 'Forty',
+                     50: 'Fifty', 60: 'Sixty', 70: 'Seventy', 80: 'Eighty',
+                     90: 'Ninety', 0: 'Zero'}
+        try:
+            return num2words[number]
+        except KeyError:
+            try:
+                return (num2words[number - number % 10] + " " + num2words[number % 10].lower()).replace("  ", " ")
+            except KeyError:
+                raise Exception('Number out of range')
 
 
 class ConvertDecimal:
@@ -517,7 +631,7 @@ class ConvertHex:
         return self.base.binary(self.decimal(x))
 
     def decimal(self, x):
-        return int(x, 16)
+        return int(str(x), 16)
 
 
 class ConvertBinary:
@@ -808,7 +922,7 @@ class EmailAddress:
         return "{}@{}".format(self.username, self.domain)
 
     def __tuple__(self):
-        return (self.username, self.domain)
+        return self.username, self.domain
 
 
 class Address:

@@ -578,6 +578,17 @@ class Matrix:
                             matched_item = self.get_item_from_tag(relationship.item2)
                             if matched_item is not None:
                                 relationship.link_second_person(matched_item)
+                        if item.student:
+                            if item.has_high_school:
+                                item.high_school = self.get_item_from_tag(item.high_school_tag)
+                            if item.has_middle_school:
+                                item.middle_school = self.get_item_from_tag(item.middle_school_tag)
+                            if item.grade > 8:
+                                item.school = item.high_school
+                            else:
+                                item.school = item.middle_school
+
+
             else:
                 raise Exception("database version is outdated")
         else:

@@ -2,8 +2,8 @@ from matrix import Matrix
 
 mtx = Matrix()
 
-mtx.load_from_url("https://www.zoos-tech.com/api/mtx_query?query=select%20*%20from%20students&key=fedcba")
+mtx.load_from_file("matrix_v2.json")
 
 me = mtx.name_match("max a")
 
-print(me)
+print(me.biography)

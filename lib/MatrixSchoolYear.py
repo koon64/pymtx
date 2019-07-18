@@ -7,6 +7,8 @@ class MatrixSchoolYear:
         self.year = year
         self.quarters = [MatrixSchoolQuarter(quarter) for quarter in range(0, 4)]
         self.semesters = [MatrixSchoolSemester(semester) for semester in range(0, 2)]
+        self.music = None
+        self.sports = []
 
     def __str__(self):
         return self.year

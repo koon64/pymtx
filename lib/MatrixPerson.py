@@ -75,14 +75,31 @@ class MatrixPerson(MatrixItem):
                 if item_dict['data']['education']['yog'] != "":
                     self.yog = int(item_dict['data']['education']['yog'])
                     self.student = True
+                    self.school = None
+                    self.high_school = None
+                    self.middle_school = None
+                    self.has_high_school = False
+                    self.has_middle_school = False
+
                     for school_type in item_dict['data']['education']:
                         if school_type != "yog":
                             school = item_dict['data']['education'][school_type]
                             if "yog" in school:
+                                self.student_id = int(school['student_id'])
+                                self.schedule_id = school['schedule_id'] if "schedule_id" in school else None
+                                if school_type == "high_school":
+                                    self.high_school_tag = school['name']
+                                    self.has_high_school = True
+                                elif school_type == "middle_school":
+                                    self.middle_school_tag = school['name']
+                                    self.has_middle_school = True
+
                                 if "years" in school:
                                     for year in school['years']:
                                         year_dict = school['years'][year]
                                         year_obj = MatrixSchoolYear(year)
+                                        if "music" in year_dict:
+                                            year_obj.music = year_dict['music']
                                         if "quarters" in year_dict:
                                             q_num = 0
                                             for quarter_dict in year_dict["quarters"]:
@@ -509,4 +526,79 @@ class MatrixPerson(MatrixItem):
         for year in self.school_years:
             gpa += year.gpa
         return gpa / len(self.school_years)
+
+    @property
+    def school_music(self):
+        for y in self.school_years:
+            if y.music:
+                return y.music
+
+    @property
+    def biography(self):
+        pronoun = "He" if self.sex == "male" else "She"
+        biography = self.name.display + " is a "
+        if self.student:
+            if self.grade > 8:
+                biography += _.grade_match[self.grade]
+            else:
+                biography += _.format.ordinal(self.grade) + " grader"
+            biography += " at " + str(self.school.name)
+        if self.has_birthdate:
+            biography += ', age ' + _.convert.number_to_words(self.age) + ", born " + self.birthdate.formatted_year
+        biography += ". "
+
+        has_parent = False
+        has_father = False
+        has_mother = False
+        schools = {}
+        if len(self.relationships) > 0:
+            for relationship in self.relationships:
+                if relationship.item2_is_person:
+                    for rel in relationship.item2.relationships:
+                        if rel.item2 == self:
+                            relationship_relitivity = rel.relationship
+                    if relationship.relationship_group == "parents":
+                        if not has_parent:
+                            has_parent = True
+                            biography += relationship_relitivity.title() + " of "
+                        if relationship.relationship == 'father' and not has_father:
+                            has_father = True
+                            if has_mother:
+                                biography += ' and '
+                            biography += relationship.item2.name.display
+                        elif relationship.relationship == 'mother' and not has_mother:
+                            has_mother = True
+                            if has_father:
+                                biography += ' and '
+                            biography += relationship.item2.name.display
+                    elif relationship.relationship_group == "siblings":
+                        school_name = str(relationship.item2.school.name)
+                        if school_name in schools:
+                            schools[school_name].append(relationship.item2)
+                        else:
+                            schools[school_name] = [relationship.item2]
+            if has_mother or has_father:
+                biography += '. '
+            if len(schools) > 0:
+                biography += pronoun + " has "
+                school_counter = 0
+                for school_name in schools:
+                    people = schools[school_name]
+                    for person in people:
+                        if len(schools) == school_counter + 1 and len(schools) > 1:
+                            biography += ', and '
+                        biography += _.format.plural(len(people), 'sibling') + ' that goes to ' + school_name + ', ' + person.name.display + ' who is ' + ('in ' + _.format.ordinal(person.grade) + ' grade' if person.grade < 9 else "a " + _.grade_match[person.grade])
+                    school_counter += 1
+                biography += '.'
+            biography += ' They live'
+        else:
+            biography += pronoun + " lives"
+        biography += ' on ' + self.address.street_format + ' ' + self.address.locality + '.'
+        used_music = self.school_music
+        if used_music:
+            biography += ' ' + pronoun + ' is a member of the ' + self.address.locality + ' ' + self.school_music.title()
+
+
+
+        return biography
 
