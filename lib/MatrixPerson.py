@@ -16,6 +16,7 @@ from lib.MatrixSchoolSchedule import MatrixSchoolSchedule
 from lib.MatrixYoutubeAccount import MatrixYoutubeAccount
 from lib.MatrixInstagramComment import MatrixInstagramComment
 from lib.MatrixInstagramAccount import MatrixInstagramAccount
+from lib.MatrixTeam import MatrixTeam, MatrixPlayer, MatrixSport
 from lib.MatrixSchoolClass import MatrixSchoolClass, MatrixSchoolFree
 from unders import Underscore
 
@@ -57,6 +58,7 @@ class MatrixPerson(MatrixItem):
                                              self.matrix_instance.debug)
             # sets the birthday
             self.has_birthdate = item_dict['data']['birthdate']['date'] is not None
+            self.age
             if self.has_birthdate:
                 self.birthdate = MatrixBirthdate(item_dict['data']['birthdate']['date'],
                                                  item_dict['data']['birthdate']['dow'],
@@ -75,6 +77,8 @@ class MatrixPerson(MatrixItem):
                 if item_dict['data']['education']['yog'] != "":
                     self.yog = int(item_dict['data']['education']['yog'])
                     self.student = True
+                    if self.grade > 12:
+                        self.student = False
                     self.school = None
                     self.high_school = None
                     self.middle_school = None
@@ -100,6 +104,18 @@ class MatrixPerson(MatrixItem):
                                         year_obj = MatrixSchoolYear(year)
                                         if "music" in year_dict:
                                             year_obj.music = year_dict['music']
+                                        if "sports" in year_dict:
+                                            for sport_dict in year_dict['sports']:
+                                                sport_team_tag = 'team.' + (sport_dict['team']['town'] + " " + sport_dict['team']['name']).lower().replace(" ", "_")
+                                                if self.matrix_instance.get_item_from_tag(sport_team_tag):
+                                                    team = self.matrix_instance.get_item_from_tag(sport_team_tag)
+                                                else:
+                                                    sport = MatrixSport(sport_dict['sport'])
+                                                    team = MatrixTeam(self.matrix_instance, sport, sport_dict['team']['name'], sport_dict['team']['town'], sport_dict['team']['logo'], sport_dict['team']['link'], sport_dict['team']['varsity'] if "varsity" in sport_dict['team'] else False)
+                                                    self.matrix_instance.items.append(team)
+                                                player = MatrixPlayer(sport_dict['player']['position'], sport_dict['player']['number'], sport_dict['player']['link'])
+                                                team.add_player(player)
+                                                year_obj.sports.append(player)
                                         if "quarters" in year_dict:
                                             q_num = 0
                                             for quarter_dict in year_dict["quarters"]:
@@ -454,6 +470,7 @@ class MatrixPerson(MatrixItem):
             try:
                 return _.get_age(self.birthdate.date_string)
             except:
+                self.has_birthdate = False
                 return None
 
     @property
@@ -534,6 +551,17 @@ class MatrixPerson(MatrixItem):
                 return y.music
 
     @property
+    def school_year(self):
+        if len(self.school_years) > 0:
+            return self.school_years[len(self.school_years) - 1]
+
+    @property
+    def sports(self):
+        if self.school_year:
+            return [sport for sport in self.school_year.sports]
+        return []
+
+    @property
     def biography(self):
         pronoun = "He" if self.sex == "male" else "She"
         biography = self.name.display + " is a "
@@ -572,11 +600,12 @@ class MatrixPerson(MatrixItem):
                                 biography += ' and '
                             biography += relationship.item2.name.display
                     elif relationship.relationship_group == "siblings":
-                        school_name = str(relationship.item2.school.name)
-                        if school_name in schools:
-                            schools[school_name].append(relationship.item2)
-                        else:
-                            schools[school_name] = [relationship.item2]
+                        if relationship.item2.student and relationship.item2.school is not None:
+                            school_name = str(relationship.item2.school.name)
+                            if school_name in schools:
+                                schools[school_name].append(relationship.item2)
+                            else:
+                                schools[school_name] = [relationship.item2]
             if has_mother or has_father:
                 biography += '. '
             if len(schools) > 0:
@@ -593,12 +622,29 @@ class MatrixPerson(MatrixItem):
             biography += ' They live'
         else:
             biography += pronoun + " lives"
-        biography += ' on ' + self.address.street_format + ' ' + self.address.locality + '.'
-        used_music = self.school_music
-        if used_music:
-            biography += ' ' + pronoun + ' is a member of the ' + self.address.locality + ' ' + self.school_music.title()
-
-
-
+        if self.address.valid_address:
+            biography += ' on ' + self.address.street_format + ' ' + self.address.locality + '.'
+            used_music = self.school_music
+            if used_music:
+                biography += ' ' + pronoun + ' is a member of the ' + self.address.locality + ' ' + self.school_music.title()
+            used_sports = len(self.sports) > 0
+            if used_sports:
+                if used_music:
+                    biography += ', and plays '
+                else:
+                        biography += pronoun + ' plays '
+                player_counter = 0
+                for player in self.sports:
+                    biography += str(player.sport)
+                    if player.position != "":
+                        biography += " as a " + player.position
+                    if len(self.sports) != player_counter + 1:
+                        if len(self.sports) >= 2:
+                            biography += ', and '
+                        else:
+                            biography += ', '
+                    player_counter += 1
+            if used_sports or used_music:
+                biography += '.'
         return biography
 
