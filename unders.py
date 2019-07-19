@@ -614,6 +614,12 @@ class ConvertClass:
             except KeyError:
                 raise Exception('Number out of range')
 
+    def centimeters_to_feet_and_inches(self, centimeters):
+        total_inches = centimeters / 2.54
+        feet = floor(total_inches / 12)
+        inches = int(total_inches - feet * 12)
+        return "{}'{}\"".format(feet, inches)
+
 
 class ConvertDecimal:
     def binary(self, x):

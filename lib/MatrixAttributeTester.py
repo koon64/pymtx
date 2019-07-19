@@ -239,3 +239,14 @@ class MatrixAttributeTester:
     def get_math_level(self, item):
         if type(item) is MatrixPerson and item.student:
             return item.math_level
+
+    # returns height
+    def get_height(self, item):
+        if type(item) is MatrixPerson and item.height is not None:
+            return item.height.amount
+
+    # returns weight
+    def get_weight(self, item):
+        if type(item) is MatrixPerson and item.weight is not None:
+            return item.weight.amount
+

@@ -1,4 +1,5 @@
 import logging
+import datetime
 from lib.MatrixItem import MatrixItem
 from lib.MatrixPhone import MatrixPhone
 from lib.MatrixEmail import MatrixEmail
@@ -6,6 +7,8 @@ from lib.MatrixAddress import MatrixAddress
 from lib.MatrixBirthdate import MatrixBirthdate
 from lib.MatrixSchoolYear import MatrixSchoolYear
 from lib.MatrixPersonName import MatrixPersonName
+from lib.MatrixHeightNode import MatrixHeightNode
+from lib.MatrixWeightNode import MatrixWeightNode
 from lib.MatrixRelationship import MatrixRelationship
 from lib.MatrixInstagramTag import MatrixInstagramTag
 from lib.MatrixYoutubeVideo import MatrixYoutubeVideo
@@ -229,27 +232,26 @@ class MatrixPerson(MatrixItem):
                 social_history = item_dict['data']['social_history']
                 for node_time in social_history:
                     node = social_history[node_time]
-                    datetime = node_time
                     social_media_node = None
                     if node['from'] == "instagram":
                         if node['type'] == 'post':
-                            social_media_node = MatrixInstagramPost(self, datetime, node['image_url'],
+                            social_media_node = MatrixInstagramPost(self, node_time, node['image_url'],
                                                                     node['caption'], node['like_count'],
                                                                     node['comment_count'])
                         elif node['type'] == 'comment':
                             if "post" in node:
-                                social_media_node = MatrixInstagramComment(self, datetime, node['comment'],
+                                social_media_node = MatrixInstagramComment(self, node_time, node['comment'],
                                                                            node['post']['image_url'])
                         elif node['type'] == 'tag':
                             if "post" in node:
-                                social_media_node = MatrixInstagramTag(self, datetime, node['post']['image_url'])
+                                social_media_node = MatrixInstagramTag(self, node_time, node['post']['image_url'])
                         elif node['type'] == 'like':
                             if "post" in node:
-                                social_media_node = MatrixInstagramLike(self, datetime, node['post']['image_url'])
+                                social_media_node = MatrixInstagramLike(self, node_time, node['post']['image_url'])
                     elif node['from'] == 'youtube':
                         if node['type'] == 'video':
                             video_id = _.between(node['thumbnail'], 'https://i.ytimg.com/vi/', '/mqdefault.jpg')
-                            social_media_node = MatrixYoutubeVideo(self, datetime, video_id, node['title'],
+                            social_media_node = MatrixYoutubeVideo(self, node_time, video_id, node['title'],
                                                                    node['thumbnail'])
                     if social_media_node is not None:
                         self.social_history.append(social_media_node)
@@ -264,6 +266,32 @@ class MatrixPerson(MatrixItem):
                         relationship = relationship['type']
                     relationship_obj = MatrixRelationship(self, tag, relationship)
                     self.relationships.append(relationship_obj)
+
+            # adds the physical attributes
+            self.height_history = []
+            self.weight_history = []
+            if "physical_attributes" in item_dict['data']:
+                physical_attributes = item_dict['data']['physical_attributes']
+                if "height" in physical_attributes:
+                    for height_node in physical_attributes['height']['history']:
+                        if "time" in height_node:
+                            node_time = height_node['time']
+                        elif "last_updated" in height_node:
+                            node_time = height_node['last_updated']
+                        else:
+                            break
+                        height = MatrixHeightNode(float(height_node['height']), datetime.datetime.strptime(node_time, "%m/%d/%Y %H:%M:%S"))
+                        self.height_history.append(height)
+                if "weight" in physical_attributes:
+                    for height_node in physical_attributes['weight']['history']:
+                        if "time" in height_node:
+                            node_time = height_node['time']
+                        elif "last_updated" in height_node:
+                            node_time = height_node['last_updated']
+                        else:
+                            break
+                        weight = MatrixWeightNode(float(height_node['weight']), datetime.datetime.strptime(node_time, "%m/%d/%Y %H:%M:%S"))
+                        self.weight_history.append(weight)
 
     def __str__(self):
         return "[ MTX PERSON <"+self.tag+"> " + str(self.name) + " ]"
@@ -559,6 +587,16 @@ class MatrixPerson(MatrixItem):
         if self.school_year:
             return [sport for sport in self.school_year.sports]
         return []
+
+    @property
+    def height(self):
+        if len(self.height_history) > 0:
+            return self.height_history[len(self.height_history) - 1]
+
+    @property
+    def weight(self):
+        if len(self.weight_history) > 0:
+            return self.weight_history[len(self.weight_history) - 1]
 
     @property
     def biography(self):

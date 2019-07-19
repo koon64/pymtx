@@ -469,6 +469,30 @@ class Matrix:
                         ]
                     }
                 }
+            },
+            "height": {
+                "type": "int",
+                "function": self.attribute_tester.get_height,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "gtr",
+                    "less",
+                    "gtr_equ",
+                    "less_equ"
+                ]
+            },
+            "weight": {
+                "type": "int",
+                "function": self.attribute_tester.get_weight,
+                "valid_ops": [
+                    "equals",
+                    "not_equals",
+                    "gtr",
+                    "less",
+                    "gtr_equ",
+                    "less_equ"
+                ]
             }
         }
         self.attribute_modifier = MatrixAttributeModifier()
@@ -889,7 +913,7 @@ class Matrix:
     def select_items_from_query_array(self, query_array):
         conditions = query_array['conditions']
         items = [item for item in self.items if self.valid_item_from_conditions(item, conditions)]
-        if not query_array['order']:
+        if "order" not in query_array or not query_array['order']:
             return items
         else:
             items_with_value = []
